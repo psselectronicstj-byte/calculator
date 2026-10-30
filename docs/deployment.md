@@ -21,7 +21,7 @@ npm run build
 Workflow требует явного opt-in в принадлежащем пользователю репозитории:
 
 1. В **Settings → Pages → Build and deployment** выберите **GitHub Actions**.
-2. В **Settings → Secrets and variables → Actions → Variables** добавьте `PAGES_REPOSITORY` со значением точного имени репозитория `owner/repository`. Пока переменная отсутствует или не совпадает с `github.repository`, workflow выполняет проверки, но не загружает артефакт и не публикует сайт.
+2. В **Settings → Secrets and variables → Actions → Variables** добавьте именно repository variable `PAGES_REPOSITORY` со значением точного имени репозитория `owner/repository`. Environment-level variable не подходит: проверка публикации выполняется до запуска deployment environment. Пока repository variable отсутствует или не совпадает с `github.repository`, workflow выполняет проверки, но не загружает артефакт и не публикует сайт.
 3. Не добавляйте токены или другие секреты: статическая публикация использует ограниченные `GITHUB_TOKEN` permissions.
 
 Для project Pages базовый путь по умолчанию берётся из имени репозитория (`/repository/`). Для корневого Pages-сайта или нестандартного пути задайте необязательную переменную `PAGES_BASE_PATH`, например `/` либо `/Mathlab-iPhone/`. Локально можно собрать с тем же путём:
