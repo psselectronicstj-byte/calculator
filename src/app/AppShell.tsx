@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import type { FeatureKind, NavigationTarget } from "../domain/feature";
+import type { NavigationTarget } from "../domain/feature";
+import type { HistoryEntry, HistoryRestoreData } from "../domain/history-entry";
 import { historyStore } from "../storage/history-store";
 import { featureLabels, navigationItems } from "./feature-registry";
 import { registerServiceWorker } from "../pwa/register-service-worker";
@@ -15,7 +16,7 @@ const HistoryView = lazy(() => import("../features/history/HistoryView").then(({
 
 export function AppShell() {
   const [active, setActive] = useState<NavigationTarget>("calculator");
-  const [restoredInput, setRestoredInput] = useState("");
+  const [restoredEntry, setRestoredEntry] = useState<HistoryEntry | null>(null);
   const [offline, setOffline] = useState(() => !navigator.onLine);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -46,10 +47,19 @@ export function AppShell() {
     };
   }, []);
 
-  const restore = ({ feature, input }: { feature: FeatureKind; input: string }) => {
-    setRestoredInput(input);
-    setActive(feature);
+  const restore = (entry: HistoryEntry) => {
+    setRestoredEntry(entry);
+    setActive(entry.feature);
   };
+
+  const restoredEquationSystem = restoredEntry?.feature === "equations"
+    && restoredEntry.restoreData?.kind === "equation-system"
+    ? restoredEntry.restoreData
+    : undefined;
+  const restoredMatrixOperation: Extract<HistoryRestoreData, { kind: "matrix-operation" }> | undefined =
+    restoredEntry?.feature === "matrices" && restoredEntry.restoreData?.kind === "matrix-operation"
+      ? restoredEntry.restoreData
+      : undefined;
 
   const activateUpdate = () => {
     const waitingWorker = registration?.waiting;
@@ -93,13 +103,54 @@ export function AppShell() {
       </nav>
       <div className="app-content">
         <Suspense fallback={<p className="app-loading" role="status">Загрузка раздела…</p>}>
-          {active === "calculator" && <CalculatorView initialInput={restoredInput} store={historyStore} />}
-          {active === "algebra" && <AlgebraView initialInput={restoredInput} store={historyStore} />}
-          {active === "equations" && <EquationView initialInput={restoredInput} store={historyStore} />}
-          {active === "calculus" && <CalculusView initialInput={restoredInput} store={historyStore} />}
-          {active === "graph2d" && <Graph2DView initialInput={restoredInput || "x^2"} store={historyStore} />}
-          {active === "graph3d" && <Graph3DView initialInput={restoredInput || "x+y"} store={historyStore} />}
-          {active === "matrices" && <MatricesView initialInput={restoredInput || "1, 2\n3, 4"} store={historyStore} />}
+          {active === "calculator" && (
+            <CalculatorView
+              initialInput={restoredEntry?.feature === "calculator" ? restoredEntry.input : ""}
+              store={historyStore}
+            />
+          )}
+          {active === "algebra" && (
+            <AlgebraView
+              initialInput={restoredEntry?.feature === "algebra" ? restoredEntry.input : ""}
+              store={historyStore}
+            />
+          )}
+          {active === "equations" && (
+            <EquationView
+              initialInput={
+                restoredEntry?.feature === "equations" && !restoredEquationSystem
+                  ? restoredEntry.input
+                  : ""
+              }
+              initialSystem={restoredEquationSystem}
+              store={historyStore}
+            />
+          )}
+          {active === "calculus" && (
+            <CalculusView
+              initialInput={restoredEntry?.feature === "calculus" ? restoredEntry.input : ""}
+              store={historyStore}
+            />
+          )}
+          {active === "graph2d" && (
+            <Graph2DView
+              initialInput={restoredEntry?.feature === "graph2d" ? restoredEntry.input : "x^2"}
+              store={historyStore}
+            />
+          )}
+          {active === "graph3d" && (
+            <Graph3DView
+              initialInput={restoredEntry?.feature === "graph3d" ? restoredEntry.input : "x+y"}
+              store={historyStore}
+            />
+          )}
+          {active === "matrices" && (
+            <MatricesView
+              initialInput={restoredEntry?.feature === "matrices" ? restoredEntry.input : "1, 2\n3, 4"}
+              initialRestore={restoredMatrixOperation}
+              store={historyStore}
+            />
+          )}
           {active === "history" && <HistoryView store={historyStore} onRestore={restore} />}
           {active !== "calculator" && active !== "algebra" && active !== "equations" && active !== "calculus" && active !== "graph2d" && active !== "graph3d" && active !== "matrices" && active !== "history" && (
             <section className="feature-placeholder">

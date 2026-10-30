@@ -50,7 +50,7 @@ describe("HistoryView", () => {
     fireEvent.click(await screen.findByRole("button", { name: /открыть x\^2=4/i }));
 
     await waitFor(() => {
-      expect(onRestore).toHaveBeenCalledWith({ feature: "equations", input: "x^2=4" });
+      expect(onRestore).toHaveBeenCalledWith(sampleEntry);
     });
   });
 

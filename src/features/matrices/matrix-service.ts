@@ -46,21 +46,27 @@ function isSquare(matrix: Matrix): boolean {
 
 function matrixRank(matrix: Matrix): number {
   const reduced = matrix.map((row) => [...row]);
-  const scale = reduced.flat().reduce((largest, value) => Math.max(largest, Math.abs(value)), 0);
-  const tolerance = Math.max(Number.MIN_VALUE, 1e-12 * scale);
+  const rowScales = reduced.map((row) => (
+    row.reduce((largest, value) => Math.max(largest, Math.abs(value)), 0)
+  ));
+  const tolerance = 1e-12;
   let pivotRow = 0;
 
   for (let column = 0; column < reduced[0].length && pivotRow < reduced.length; column += 1) {
     let bestRow = pivotRow;
+    let bestRatio = rowScales[bestRow] === 0 ? 0 : Math.abs(reduced[bestRow][column]) / rowScales[bestRow];
     for (let row = pivotRow + 1; row < reduced.length; row += 1) {
-      if (Math.abs(reduced[row][column]) > Math.abs(reduced[bestRow][column])) {
+      const ratio = rowScales[row] === 0 ? 0 : Math.abs(reduced[row][column]) / rowScales[row];
+      if (ratio > bestRatio) {
         bestRow = row;
+        bestRatio = ratio;
       }
     }
-    if (Math.abs(reduced[bestRow][column]) <= tolerance) {
+    if (bestRatio <= tolerance) {
       continue;
     }
     [reduced[pivotRow], reduced[bestRow]] = [reduced[bestRow], reduced[pivotRow]];
+    [rowScales[pivotRow], rowScales[bestRow]] = [rowScales[bestRow], rowScales[pivotRow]];
     const pivot = reduced[pivotRow][column];
     for (let entry = column; entry < reduced[pivotRow].length; entry += 1) {
       reduced[pivotRow][entry] /= pivot;

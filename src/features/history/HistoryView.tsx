@@ -4,7 +4,7 @@ import type { HistoryEntry } from "../../domain/history-entry";
 import { historyStore, type HistoryStore } from "../../storage/history-store";
 
 type HistoryViewProps = {
-  onRestore: (item: { feature: FeatureKind; input: string }) => void;
+  onRestore: (item: HistoryEntry) => void;
   store?: HistoryStore;
 };
 
@@ -88,7 +88,7 @@ export function HistoryView({ onRestore, store = historyStore }: HistoryViewProp
                     className="button button--quiet"
                     type="button"
                     aria-label={`Открыть ${entry.input}`}
-                    onClick={() => onRestore({ feature: entry.feature, input: entry.input })}
+                    onClick={() => onRestore(entry)}
                   >
                     Открыть
                   </button>

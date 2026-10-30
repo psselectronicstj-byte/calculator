@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MathEditor } from "../../components/MathEditor";
-import type { HistoryEntry } from "../../domain/history-entry";
+import type { HistoryEntry, HistoryRestoreData } from "../../domain/history-entry";
 import { failure, type MathOutcome } from "../../domain/math-outcome";
 import { formatNumericResult } from "../../math/evaluate";
 import { historyStore, type HistoryStore } from "../../storage/history-store";
@@ -8,6 +8,7 @@ import { solveEquation, solveLinearSystem, solveRootsInInterval } from "./equati
 
 type EquationViewProps = {
   initialInput?: string;
+  initialSystem?: Extract<HistoryRestoreData, { kind: "equation-system" }>;
   store?: HistoryStore;
 };
 
@@ -16,17 +17,35 @@ type SystemInput = {
   constants: number[];
 };
 
+const maximumSystemDimension = 20;
+const maximumSystemInputLength = 10_000;
+
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "Не удалось сохранить результат в истории.";
 }
 
 function parseSystemInput(coefficientsText: string, constantsText: string): MathOutcome<SystemInput> {
+  if (coefficientsText.length > maximumSystemInputLength || constantsText.length > maximumSystemInputLength) {
+    return failure("resource-limit", "Ввод системы слишком велик для обработки.");
+  }
   const rows = coefficientsText.trim().split(/\r?\n/).map((row) => row.trim()).filter(Boolean);
   const values = constantsText.trim().split(/[,\s;]+/).filter(Boolean).map(Number);
   if (rows.length === 0 || values.length === 0) {
     return failure("invalid-input", "Введите коэффициенты системы и свободные члены.");
   }
+  if (rows.length > maximumSystemDimension || values.length > maximumSystemDimension) {
+    return failure(
+      "resource-limit",
+      `Размер системы не должен превышать ${maximumSystemDimension} уравнений и ${maximumSystemDimension} переменных.`,
+    );
+  }
   const coefficients = rows.map((row) => row.split(/[,\s;]+/).filter(Boolean).map(Number));
+  if (coefficients.some((row) => row.length > maximumSystemDimension)) {
+    return failure(
+      "resource-limit",
+      `Размер системы не должен превышать ${maximumSystemDimension} уравнений и ${maximumSystemDimension} переменных.`,
+    );
+  }
   if (coefficients.some((row) => row.length === 0 || row.some((value) => !Number.isFinite(value)))) {
     return failure("invalid-input", "Коэффициенты должны быть конечными числами.");
   }
@@ -73,7 +92,7 @@ function OutcomePanel<T>({
   );
 }
 
-export function EquationView({ initialInput = "", store = historyStore }: EquationViewProps) {
+export function EquationView({ initialInput = "", initialSystem, store = historyStore }: EquationViewProps) {
   const [input, setInput] = useState(initialInput);
   const [variable, setVariable] = useState("x");
   const [mode, setMode] = useState<"exact" | "decimal">("exact");
@@ -82,11 +101,16 @@ export function EquationView({ initialInput = "", store = historyStore }: Equati
   const [systemOutcome, setSystemOutcome] = useState<MathOutcome<number[]> | null>(null);
   const [min, setMin] = useState("-10");
   const [max, setMax] = useState("10");
-  const [coefficientsText, setCoefficientsText] = useState("1, 1\n2, -1");
-  const [constantsText, setConstantsText] = useState("3, 0");
+  const [coefficientsText, setCoefficientsText] = useState(initialSystem?.coefficientsText ?? "1, 1\n2, -1");
+  const [constantsText, setConstantsText] = useState(initialSystem?.constantsText ?? "3, 0");
   const [storageError, setStorageError] = useState<string | null>(null);
 
-  const save = async (entryInput: string, result: string, status: "exact" | "approximate") => {
+  const save = async (
+    entryInput: string,
+    result: string,
+    status: "exact" | "approximate",
+    restoreData?: HistoryRestoreData,
+  ) => {
     const entry: HistoryEntry = {
       id: crypto.randomUUID(),
       feature: "equations",
@@ -94,6 +118,7 @@ export function EquationView({ initialInput = "", store = historyStore }: Equati
       result,
       status,
       createdAt: Date.now(),
+      ...(restoreData && { restoreData }),
     };
     try {
       await store.add(entry);
@@ -133,7 +158,11 @@ export function EquationView({ initialInput = "", store = historyStore }: Equati
     setSystemOutcome(result);
     if (result.ok) {
       const resultText = result.value.map((value, index) => `x${index + 1} = ${formatNumericResult(value)}`).join("; ");
-      await save(`${coefficientsText}; b=[${constantsText}]`, resultText, result.status);
+      await save(`${coefficientsText}; b=[${constantsText}]`, resultText, result.status, {
+        kind: "equation-system",
+        coefficientsText,
+        constantsText,
+      });
     }
   };
 

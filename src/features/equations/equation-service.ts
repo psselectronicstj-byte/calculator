@@ -7,6 +7,8 @@ import { runSymbolic, solveSymbolically } from "../../math/adapters/symbolic";
 const symbolicNames = new Set(["pi", "e", "sin", "cos", "tan", "log", "ln", "sqrt", "abs"]);
 const rootSubintervals = 1024;
 const rootResidualTolerance = 1e-8;
+const maximumSystemDimension = 20;
+const relativePivotTolerance = 1e-12;
 
 type ParsedEquation = {
   residual: string;
@@ -280,12 +282,16 @@ export function solveLinearSystem(
 ): MathOutcome<number[]> {
   const rowCount = coefficients.length;
   const variableCount = coefficients[0]?.length ?? 0;
-  if (
-    rowCount === 0
-    || variableCount === 0
-    || constants.length !== rowCount
-    || coefficients.some((row) => row.length !== variableCount)
-  ) {
+  if (rowCount === 0 || variableCount === 0) {
+    return failure("invalid-shape", "Размеры коэффициентов и свободных членов не совпадают.");
+  }
+  if (rowCount > maximumSystemDimension || variableCount > maximumSystemDimension) {
+    return failure(
+      "resource-limit",
+      `Размер системы не должен превышать ${maximumSystemDimension} уравнений и ${maximumSystemDimension} переменных.`,
+    );
+  }
+  if (constants.length !== rowCount || coefficients.some((row) => row.length !== variableCount)) {
     return failure("invalid-shape", "Размеры коэффициентов и свободных членов не совпадают.");
   }
   if (
@@ -297,23 +303,30 @@ export function solveLinearSystem(
 
   const original = coefficients.map((row, index) => [...row, constants[index]]);
   const matrix = original.map((row) => [...row]);
-  const scale = matrix.flat().reduce((largest, value) => Math.max(largest, Math.abs(value)), 0);
-  const tolerance = Math.max(Number.MIN_VALUE, 1e-12 * scale);
+  const rowScales = coefficients.map((row) => (
+    row.reduce((largest, value) => Math.max(largest, Math.abs(value)), 0)
+  ));
   const pivotColumns: number[] = [];
   let pivotRow = 0;
 
   for (let column = 0; column < variableCount && pivotRow < rowCount; column += 1) {
     let bestRow = pivotRow;
+    let bestRatio = rowScales[bestRow] === 0 ? 0 : Math.abs(matrix[bestRow][column]) / rowScales[bestRow];
     for (let candidate = pivotRow + 1; candidate < rowCount; candidate += 1) {
-      if (Math.abs(matrix[candidate][column]) > Math.abs(matrix[bestRow][column])) {
+      const ratio = rowScales[candidate] === 0
+        ? 0
+        : Math.abs(matrix[candidate][column]) / rowScales[candidate];
+      if (ratio > bestRatio) {
         bestRow = candidate;
+        bestRatio = ratio;
       }
     }
-    if (Math.abs(matrix[bestRow][column]) <= tolerance) {
+    if (bestRatio <= relativePivotTolerance) {
       continue;
     }
 
     [matrix[pivotRow], matrix[bestRow]] = [matrix[bestRow], matrix[pivotRow]];
+    [rowScales[pivotRow], rowScales[bestRow]] = [rowScales[bestRow], rowScales[pivotRow]];
     const pivot = matrix[pivotRow][column];
     for (let entry = column; entry <= variableCount; entry += 1) {
       matrix[pivotRow][entry] /= pivot;
@@ -323,21 +336,26 @@ export function solveLinearSystem(
         continue;
       }
       const factor = matrix[row][column];
-      if (Math.abs(factor) <= tolerance) {
+      if (Math.abs(factor) <= relativePivotTolerance * rowScales[row]) {
         matrix[row][column] = 0;
         continue;
       }
       for (let entry = column; entry <= variableCount; entry += 1) {
         matrix[row][entry] -= factor * matrix[pivotRow][entry];
       }
+      if (matrix[row].some((value) => !Number.isFinite(value))) {
+        return failure("unsupported", "Система численно неустойчива; решение не удалось подтвердить.");
+      }
     }
     pivotColumns.push(column);
     pivotRow += 1;
   }
 
-  const inconsistent = matrix.some((row) => (
-    row.slice(0, variableCount).every((value) => Math.abs(value) <= tolerance)
-    && Math.abs(row[variableCount]) > tolerance
+  const inconsistent = matrix.some((row, index) => (
+    row.slice(0, variableCount).every((value) => (
+      Math.abs(value) <= relativePivotTolerance * rowScales[index]
+    ))
+    && Math.abs(row[variableCount]) > Math.max(Number.MIN_VALUE, relativePivotTolerance * rowScales[index])
   ));
   if (inconsistent) {
     return failure("inconsistent", "Система противоречива и не имеет решений.");
@@ -351,10 +369,12 @@ export function solveLinearSystem(
     solution[column] = matrix[row][variableCount];
   });
   const residualIsAcceptable = original.every((row, index) => {
-    const residual = row.slice(0, variableCount)
-      .reduce((sum, coefficient, column) => sum + coefficient * solution[column], 0)
-      - constants[index];
-    return Number.isFinite(residual) && Math.abs(residual) <= 1e-8 * scale;
+    const terms = row.slice(0, variableCount).map((coefficient, column) => coefficient * solution[column]);
+    const residual = terms.reduce((sum, term) => sum + term, 0) - constants[index];
+    const residualScale = terms.reduce((sum, term) => sum + Math.abs(term), Math.abs(constants[index]));
+    return Number.isFinite(residual)
+      && Number.isFinite(residualScale)
+      && Math.abs(residual) <= 1e-8 * residualScale;
   });
   if (!residualIsAcceptable) {
     return failure("unsupported", "Система численно неустойчива; решение не удалось подтвердить.");
@@ -367,6 +387,6 @@ export function solveLinearSystem(
       expression: `rank(A) = ${pivotColumns.length}`,
       explanation: "Решение найдено исключением переменных с выбором ведущего элемента.",
     }],
-    [`Относительный допуск классификации: ${tolerance}.`],
+    [`Относительный допуск выбора ведущего элемента: ${relativePivotTolerance}.`],
   );
 }

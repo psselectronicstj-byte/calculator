@@ -91,6 +91,31 @@ describe("solveLinearSystem", () => {
     }
   });
 
+  it("does not let a large right-hand side hide a valid pivot", () => {
+    expect(solveLinearSystem([[1]], [1e13])).toMatchObject({
+      ok: true,
+      value: [1e13],
+    });
+  });
+
+  it("solves systems whose rows have very different coefficient scales", () => {
+    expect(solveLinearSystem([[1e13, 0], [0, 1]], [1e13, 1])).toMatchObject({
+      ok: true,
+      value: [1, 1],
+    });
+  });
+
+  it("rejects systems larger than the supported dimension", () => {
+    const coefficients = Array.from({ length: 21 }, (_, row) => (
+      Array.from({ length: 21 }, (_, column) => row === column ? 1 : 0)
+    ));
+
+    expect(solveLinearSystem(coefficients, Array<number>(21).fill(1))).toMatchObject({
+      ok: false,
+      code: "resource-limit",
+    });
+  });
+
   it("classifies an inconsistent system", () => {
     expect(solveLinearSystem([[1, 1], [2, 2]], [2, 5])).toMatchObject({
       ok: false,

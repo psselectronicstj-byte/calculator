@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { HistoryEntry } from "../../domain/history-entry";
+import type { HistoryEntry, HistoryRestoreData } from "../../domain/history-entry";
 import { failure, type MathOutcome } from "../../domain/math-outcome";
 import { historyStore, type HistoryStore } from "../../storage/history-store";
 import { MatrixEditor } from "./MatrixEditor";
@@ -14,6 +14,7 @@ import {
 
 type MatricesViewProps = {
   initialInput?: string;
+  initialRestore?: Extract<HistoryRestoreData, { kind: "matrix-operation" }>;
   store?: HistoryStore;
 };
 
@@ -121,11 +122,21 @@ function ResultPanel({ outcome }: { outcome: MathOutcome<MatrixOperationValue> }
   );
 }
 
-export function MatricesView({ initialInput = "1, 2\n3, 4", store = historyStore }: MatricesViewProps) {
-  const [operation, setOperation] = useState<MatrixAction>("determinant");
-  const [leftText, setLeftText] = useState(initialInput);
-  const [rightText, setRightText] = useState("5, 6\n7, 8");
-  const [constantsText, setConstantsText] = useState("5\n11");
+export function MatricesView({
+  initialInput = "1, 2\n3, 4",
+  initialRestore,
+  store = historyStore,
+}: MatricesViewProps) {
+  const [operation, setOperation] = useState<MatrixAction>(initialRestore?.operation ?? "determinant");
+  const [leftText, setLeftText] = useState(initialRestore?.leftText ?? initialInput);
+  const [rightText, setRightText] = useState(
+    initialRestore?.operation === "add" || initialRestore?.operation === "multiply"
+      ? initialRestore.rightText
+      : "5, 6\n7, 8",
+  );
+  const [constantsText, setConstantsText] = useState(
+    initialRestore?.operation === "solve-system" ? initialRestore.constantsText : "5\n11",
+  );
   const [outcome, setOutcome] = useState<MathOutcome<MatrixOperationValue> | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
 
@@ -167,6 +178,11 @@ export function MatricesView({ initialInput = "1, 2\n3, 4", store = historyStore
       result: `${operationLabels[operation]}: ${formatValue(result.value)}`,
       status: result.status,
       createdAt: Date.now(),
+      restoreData: operation === "add" || operation === "multiply"
+        ? { kind: "matrix-operation", operation, leftText, rightText }
+        : operation === "solve-system"
+          ? { kind: "matrix-operation", operation, leftText, constantsText }
+          : { kind: "matrix-operation", operation, leftText },
     };
     try {
       await store.add(entry);

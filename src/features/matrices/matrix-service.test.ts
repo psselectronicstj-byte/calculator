@@ -37,6 +37,18 @@ describe("matrixOperation", () => {
     }
   });
 
+  it("does not classify a valid inverse as singular because rows have different scales", () => {
+    const inverse = matrixOperation("inverse", [[1e13, 0], [0, 1]]);
+
+    expect(inverse.ok).toBe(true);
+    if (inverse.ok) {
+      expect(inverse.value).toMatchObject([
+        [expect.closeTo(1e-13), expect.closeTo(0)],
+        [expect.closeTo(0), expect.closeTo(1)],
+      ]);
+    }
+  });
+
   it("computes rank and supported real eigenpairs", () => {
     expect(matrixOperation("rank", [[1, 2], [2, 4]])).toMatchObject({
       ok: true,

@@ -102,6 +102,69 @@ test("matrix operations succeed and incompatible shapes are explicit", async ({ 
   await expect(page.getByRole("alert")).toContainText("квадрат");
 });
 
+test("equation screen reports oversized linear systems without solving them", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Уравнения", exact: true }).click();
+
+  const coefficients = Array.from({ length: 21 }, (_, row) => (
+    Array.from({ length: 21 }, (_, column) => row === column ? "1" : "0").join(", ")
+  )).join("\n");
+  await page.getByRole("textbox", { name: "Коэффициенты системы" }).fill(coefficients);
+  await page.getByRole("textbox", { name: "Свободные члены" }).fill(Array(21).fill("1").join("\n"));
+  await page.getByRole("button", { name: "Решить систему" }).click();
+
+  await expect(page.getByRole("alert")).toContainText("20");
+});
+
+test("history restores the complete equation-system input", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Уравнения", exact: true }).click();
+  await page.getByRole("textbox", { name: "Коэффициенты системы" }).fill("2, 1\n1, 3");
+  await page.getByRole("textbox", { name: "Свободные члены" }).fill("5, 6");
+  await page.getByRole("button", { name: "Решить систему" }).click();
+
+  await page.getByRole("button", { name: "История", exact: true }).click();
+  const systemEntry = page.getByRole("listitem").filter({ hasText: "Уравнения" }).filter({ hasText: "2, 1" });
+  await systemEntry.getByRole("button", { name: /^Открыть/ }).click();
+
+  await expect(page.getByRole("textbox", { name: "Коэффициенты системы" })).toHaveValue("2, 1\n1, 3");
+  await expect(page.getByRole("textbox", { name: "Свободные члены" })).toHaveValue("5, 6");
+});
+
+test("history restores matrix addition operation and both matrices", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Матрицы", exact: true }).click();
+  await page.getByRole("combobox", { name: "Операция с матрицами" }).selectOption("add");
+  await page.getByRole("textbox", { name: "Матрица A" }).fill("1, 2\n3, 4");
+  await page.getByRole("textbox", { name: "Матрица B" }).fill("8, 7\n6, 5");
+  await page.getByRole("button", { name: "Вычислить матричную операцию" }).click();
+
+  await page.getByRole("button", { name: "История", exact: true }).click();
+  const matrixEntry = page.getByRole("listitem").filter({ hasText: "Матрицы" }).filter({ hasText: "Сложение" });
+  await matrixEntry.getByRole("button", { name: /^Открыть/ }).click();
+
+  await expect(page.getByRole("combobox", { name: "Операция с матрицами" })).toHaveValue("add");
+  await expect(page.getByRole("textbox", { name: "Матрица A" })).toHaveValue("1, 2\n3, 4");
+  await expect(page.getByRole("textbox", { name: "Матрица B" })).toHaveValue("8, 7\n6, 5");
+});
+
+test("history restores matrix-system operation and right-hand side", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Матрицы", exact: true }).click();
+  await page.getByRole("combobox", { name: "Операция с матрицами" }).selectOption("solve-system");
+  await page.getByRole("textbox", { name: "Матрица A" }).fill("2, 1\n1, 3");
+  await page.getByRole("textbox", { name: "Свободные члены b" }).fill("5\n6");
+  await page.getByRole("button", { name: "Вычислить матричную операцию" }).click();
+
+  await page.getByRole("button", { name: "История", exact: true }).click();
+  const matrixEntry = page.getByRole("listitem").filter({ hasText: "Матрицы" }).filter({ hasText: "Решить Ax = b" });
+  await matrixEntry.getByRole("button", { name: /^Открыть/ }).click();
+
+  await expect(page.getByRole("combobox", { name: "Операция с матрицами" })).toHaveValue("solve-system");
+  await expect(page.getByRole("textbox", { name: "Матрица A" })).toHaveValue("2, 1\n1, 3");
+  await expect(page.getByRole("textbox", { name: "Свободные члены b" })).toHaveValue("5\n6");
+});
+
 test("each feature input is saved and restored from local history after reload", async ({ page }) => {
   await page.goto("/");
 
