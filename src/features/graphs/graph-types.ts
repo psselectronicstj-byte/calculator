@@ -15,3 +15,13 @@ export type GraphPoint = {
   x: number;
   y: number;
 };
+
+export type Graph3DRange = GraphRange & {
+  resolution: number;
+};
+
+export type Graph3DPoint = {
+  x: number;
+  y: number;
+  z: number;
+};

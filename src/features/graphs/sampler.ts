@@ -1,5 +1,5 @@
 import { approximate, failure, type MathOutcome } from "../../domain/math-outcome";
-import { evaluateScientificAt } from "../../math/evaluate";
+import { compileScientificEvaluator } from "../../math/evaluate";
 import type { GraphPoint, GraphRange } from "./graph-types";
 
 const maximumSamples = 2000;
@@ -31,12 +31,16 @@ export function sample2D(
   if (!expression.trim()) {
     return failure("invalid-input", "Введите выражение для построения графика.");
   }
+  const compiled = compileScientificEvaluator(expression, ["x"]);
+  if (!compiled.ok) {
+    return compiled;
+  }
 
   const points: Array<GraphPoint | null> = [];
   for (let index = 0; index < width; index += 1) {
     const fraction = width === 1 ? 0.5 : index / (width - 1);
     const x = range.xMin + (range.xMax - range.xMin) * fraction;
-    const result = evaluateScientificAt(expression, "x", x);
+    const result = compiled.value({ x });
     if (!result.ok) {
       if (result.code === "domain-error") {
         points.push(null);

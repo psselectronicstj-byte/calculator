@@ -9,6 +9,11 @@ import {
 import { parseExpression } from "./expression/parse";
 
 export type AngleMode = "radians" | "degrees";
+export type ScientificBindings = Readonly<Record<string, number>>;
+export type ScientificEvaluator = (bindings: ScientificBindings) => MathOutcome<number>;
+
+const evaluatorFunctions = new Set(["sin", "cos", "tan", "log", "ln", "sqrt", "abs"]);
+const evaluatorConstants = new Set(["pi", "e"]);
 
 type Evaluated = {
   value: number;
@@ -235,11 +240,49 @@ export function evaluateScientificAt(
   if (!/^[a-z]$/.test(variable) || variable === "e" || !Number.isFinite(value)) {
     return failure("invalid-input", "Укажите одну переменную и конечное числовое значение.");
   }
+  const compiled = compileScientificEvaluator(input, [variable]);
+  if (!compiled.ok) {
+    return compiled;
+  }
+  return compiled.value({ [variable]: value });
+}
+
+export function compileScientificEvaluator(
+  input: string,
+  variables: readonly string[],
+): MathOutcome<ScientificEvaluator> {
+  if (
+    variables.length === 0
+    || variables.some((variable) => !/^[a-z]$/.test(variable) || evaluatorConstants.has(variable))
+    || new Set(variables).size !== variables.length
+  ) {
+    return failure("invalid-input", "Укажите неповторяющиеся переменные из одной строчной латинской буквы.");
+  }
   const parsed = parseExpression(input, { allowVariables: true });
   if (!parsed.ok) {
     return parsed;
   }
-  return evaluateParsedNode(parsed.value.node, "radians", new Map([[variable, value]]));
+  const allowedVariables = new Set(variables);
+  const referencedVariables = new Set(
+    (parsed.value.normalized.match(/[a-z][a-z0-9_]*/g) ?? [])
+      .filter((name) => !evaluatorFunctions.has(name) && !evaluatorConstants.has(name)),
+  );
+  const unboundVariable = [...referencedVariables].find((name) => !allowedVariables.has(name));
+  if (unboundVariable) {
+    return failure("invalid-input", `Переменная ${unboundVariable} не задана.`);
+  }
+
+  return exact((bindings) => {
+    const values = new Map<string, number>();
+    for (const variable of variables) {
+      const value = bindings[variable];
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return failure("invalid-input", `Для переменной ${variable} укажите конечное числовое значение.`);
+      }
+      values.set(variable, value);
+    }
+    return evaluateParsedNode(parsed.value.node, "radians", values);
+  });
 }
 
 function evaluateParsedNode(

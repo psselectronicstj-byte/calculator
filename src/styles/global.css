@@ -309,6 +309,10 @@ textarea {
   background: #101713;
 }
 
+.graph-canvas--3d {
+  touch-action: none;
+}
+
 .graph-range {
   display: block;
   margin-top: 10px;

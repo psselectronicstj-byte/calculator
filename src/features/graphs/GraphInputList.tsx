@@ -2,6 +2,7 @@ import type { GraphExpression } from "./graph-types";
 
 type GraphInputListProps = {
   expressions: GraphExpression[];
+  legend?: string;
   onChange: (expressions: GraphExpression[]) => void;
 };
 
@@ -15,7 +16,11 @@ function createExpression(expression = ""): GraphExpression {
   };
 }
 
-export function GraphInputList({ expressions, onChange }: GraphInputListProps) {
+export function GraphInputList({
+  expressions,
+  legend = "Функции графика",
+  onChange,
+}: GraphInputListProps) {
   const updateExpression = (id: string, value: string) => {
     onChange(expressions.map((item) => item.id === id ? { ...item, expression: value } : item));
   };
@@ -31,8 +36,8 @@ export function GraphInputList({ expressions, onChange }: GraphInputListProps) {
   };
 
   return (
-    <fieldset className="graph-input-list" aria-label="Функции графика">
-      <legend>Функции графика</legend>
+    <fieldset className="graph-input-list" aria-label={legend}>
+      <legend>{legend}</legend>
       {expressions.map((item, index) => (
         <div className="graph-input-list__row" key={item.id}>
           <label className="angle-select">
