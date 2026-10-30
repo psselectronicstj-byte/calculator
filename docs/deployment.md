@@ -18,10 +18,10 @@ npm run build
 
 ## GitHub Pages
 
-Workflow требует явного opt-in в принадлежащем пользователю репозитории:
+Workflow закреплён за единственным разрешённым репозиторием и веткой:
 
-1. В **Settings → Pages → Build and deployment** выберите **GitHub Actions**.
-2. Для этой сборки используйте репозиторий `psselectronicstj-byte/calculator`; workflow закреплён за ним и не требует переменной `PAGES_REPOSITORY`.
+1. Деплой выполняется только из `main` репозитория `psselectronicstj-byte/calculator`; другие репозитории и ветки пропускаются.
+2. При первой публикации `actions/configure-pages` включает Pages с источником GitHub Actions.
 3. Не добавляйте токены или другие секреты: статическая публикация использует ограниченные `GITHUB_TOKEN` permissions.
 
 Для project Pages базовый путь по умолчанию берётся из имени репозитория (`/repository/`). Для корневого Pages-сайта или нестандартного пути задайте необязательную переменную `PAGES_BASE_PATH`, например `/` либо `/Mathlab-iPhone/`. Локально можно собрать с тем же путём:
