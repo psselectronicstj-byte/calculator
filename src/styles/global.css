@@ -21,24 +21,26 @@ textarea {
   outline-offset: 3px;
 }
 
-.instrument {
-  width: min(100% - 32px, 760px);
+.app-shell {
+  width: min(100% - 28px, 840px);
+  min-height: 100vh;
   margin: 0 auto;
-  padding: max(28px, env(safe-area-inset-top)) 0 max(36px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top)) 0 max(32px, env(safe-area-inset-bottom));
 }
 
-.instrument__header {
+.app-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 0 30px;
+  gap: 13px;
+  padding: 14px 0 22px;
   border-bottom: 1px solid var(--line-subtle);
 }
 
-.instrument__mark {
+.app-header__mark {
   display: grid;
-  width: 48px;
-  height: 48px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   border: 1px solid var(--accent-green);
   border-radius: 14px 14px 14px 4px;
@@ -46,45 +48,272 @@ textarea {
   font-size: 25px;
 }
 
-.instrument__header h1,
-.instrument__header p,
-.instrument__screen h2,
-.instrument__screen p {
+.app-header h1,
+.app-header p,
+.feature-heading h2,
+.feature-heading p {
   margin: 0;
 }
 
-.instrument__header h1 {
-  font-size: clamp(20px, 5vw, 25px);
+.app-header h1 {
+  font-size: clamp(18px, 5vw, 23px);
   font-weight: 580;
   letter-spacing: -0.035em;
 }
 
-.instrument__header p,
-.instrument__screen > p:last-child {
+.app-header p,
+.feature-heading p {
   margin-top: 6px;
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.55;
 }
 
-.instrument__screen {
-  margin-top: 40px;
-  padding: clamp(20px, 6vw, 34px);
+.app-nav {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 13px 0 15px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-subtle) transparent;
+}
+
+.app-nav__item {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.app-nav__item--active {
+  border-color: var(--line-subtle);
+  background: var(--surface-panel);
+  color: var(--accent-mint);
+}
+
+.app-content {
+  padding-top: 12px;
+}
+
+.feature-heading {
+  margin-bottom: 24px;
+}
+
+.feature-heading h2 {
+  font-size: clamp(25px, 7vw, 34px);
+  font-weight: 560;
+  letter-spacing: -0.04em;
+}
+
+.feature-placeholder,
+.calculator,
+.history {
+  padding: clamp(18px, 5vw, 28px);
   border: 1px solid var(--line-subtle);
-  border-radius: 7px 22px 22px 22px;
+  border-radius: 7px 20px 20px 20px;
   background: var(--surface-panel);
 }
 
-.instrument__eyebrow {
-  margin-bottom: 24px !important;
+.feature-placeholder > p,
+.history__empty p,
+.result-view__empty {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.math-editor {
+  display: grid;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.math-editor textarea {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  padding: 13px 15px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 10px;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: "Cambria Math", "Times New Roman", serif;
+  font-size: 23px;
+  line-height: 1.35;
+}
+
+.calculator__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.angle-select {
+  display: grid;
+  flex: 1 1 115px;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.angle-select select {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.button--quiet {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+.button--primary {
+  border-color: var(--accent-green);
+  background: var(--accent-green);
+  color: #07120d;
+  font-weight: 650;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.keypad__key {
+  min-height: 44px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.keypad__key:nth-child(n + 21) {
   color: var(--accent-mint);
+}
+
+.result-view,
+.result-view__empty {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-subtle);
+}
+
+.result-view__status,
+.history__feature {
+  margin: 0 0 6px;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
-.instrument__screen h2 {
-  font-size: clamp(24px, 7vw, 34px);
-  font-weight: 540;
-  letter-spacing: -0.04em;
+.result-view__value {
+  color: var(--accent-mint);
+  font-size: clamp(28px, 8vw, 42px);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.result-view--error {
+  color: #ffb6a5;
+}
+
+.result-view--error p,
+.storage-error {
+  line-height: 1.5;
+}
+
+.result-view__steps {
+  display: grid;
+  gap: 12px;
+  padding-left: 22px;
+  color: var(--text-muted);
+}
+
+.result-view__steps li {
+  padding-left: 4px;
+}
+
+.result-view__steps code {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.storage-error {
+  color: #ffb6a5;
+}
+
+.history__empty {
+  padding: 4px 0 16px;
+}
+
+.history__list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-subtle);
+}
+
+.history__input,
+.history__result {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.history__input {
+  font-family: "Cambria Math", "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.history__result {
+  color: var(--accent-mint);
+}
+
+.history__actions {
+  display: flex;
+  gap: 7px;
+}
+
+.history__actions .button {
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.history__clear {
+  margin-top: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -92,5 +321,25 @@ textarea {
   *::before,
   *::after {
     scroll-behavior: auto !important;
+  }
+}
+
+@media (min-width: 700px) {
+  .app-shell {
+    padding-top: max(28px, env(safe-area-inset-top));
+  }
+
+  .app-header {
+    padding-bottom: 27px;
+  }
+
+  .app-content {
+    padding-top: 18px;
+  }
+
+  .calculator,
+  .history,
+  .feature-placeholder {
+    padding: 30px;
   }
 }
