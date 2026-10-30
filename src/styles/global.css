@@ -1,0 +1,96 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--surface-base);
+  color: var(--text-primary);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.instrument {
+  width: min(100% - 32px, 760px);
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) 0 max(36px, env(safe-area-inset-bottom));
+}
+
+.instrument__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0 30px;
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.instrument__mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--accent-green);
+  border-radius: 14px 14px 14px 4px;
+  color: var(--accent-mint);
+  font-size: 25px;
+}
+
+.instrument__header h1,
+.instrument__header p,
+.instrument__screen h2,
+.instrument__screen p {
+  margin: 0;
+}
+
+.instrument__header h1 {
+  font-size: clamp(20px, 5vw, 25px);
+  font-weight: 580;
+  letter-spacing: -0.035em;
+}
+
+.instrument__header p,
+.instrument__screen > p:last-child {
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.instrument__screen {
+  margin-top: 40px;
+  padding: clamp(20px, 6vw, 34px);
+  border: 1px solid var(--line-subtle);
+  border-radius: 7px 22px 22px 22px;
+  background: var(--surface-panel);
+}
+
+.instrument__eyebrow {
+  margin-bottom: 24px !important;
+  color: var(--accent-mint);
+  font-size: 13px;
+}
+
+.instrument__screen h2 {
+  font-size: clamp(24px, 7vw, 34px);
+  font-weight: 540;
+  letter-spacing: -0.04em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,18 @@
+:root {
+  color-scheme: dark;
+  font-family: "Aptos", "Segoe UI", sans-serif;
+  background: #101715;
+  color: #e8efeb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --surface-base: #101715;
+  --surface-panel: #18211e;
+  --surface-raised: #202b27;
+  --line-subtle: #35433d;
+  --text-primary: #e8efeb;
+  --text-muted: #9baa9f;
+  --accent-mint: #a9dbc0;
+  --accent-green: #4a896c;
+  --focus-ring: #b7e7ca;
+}
