@@ -1,6 +1,6 @@
 # Развёртывание
 
-Приложение собирается как статический сайт для GitHub Pages. Workflow запускает проверки при push в `main` или вручную, но публикует только если настроена защита по переменной репозитория `PAGES_REPOSITORY`. Для репозитория `psselectronicstj-byte/calculator` значение переменной должно быть ровно `psselectronicstj-byte/calculator`; без точного совпадения workflow выполнит проверки, но пропустит публикацию.
+Приложение собирается как статический сайт для GitHub Pages. Workflow запускает проверки при push в `main` или вручную. Публикация намеренно закреплена за `psselectronicstj-byte/calculator` и веткой `main`; из других репозиториев и веток workflow не публикует сайт.
 
 ## Локальная проверка
 
@@ -21,7 +21,7 @@ npm run build
 Workflow требует явного opt-in в принадлежащем пользователю репозитории:
 
 1. В **Settings → Pages → Build and deployment** выберите **GitHub Actions**.
-2. В **Settings → Secrets and variables → Actions → Variables** добавьте именно repository variable `PAGES_REPOSITORY` со значением точного имени репозитория `owner/repository`. Environment-level variable не подходит: проверка публикации выполняется до запуска deployment environment. Пока repository variable отсутствует или не совпадает с `github.repository`, workflow выполняет проверки, но не загружает артефакт и не публикует сайт.
+2. Для этой сборки используйте репозиторий `psselectronicstj-byte/calculator`; workflow закреплён за ним и не требует переменной `PAGES_REPOSITORY`.
 3. Не добавляйте токены или другие секреты: статическая публикация использует ограниченные `GITHUB_TOKEN` permissions.
 
 Для project Pages базовый путь по умолчанию берётся из имени репозитория (`/repository/`). Для корневого Pages-сайта или нестандартного пути задайте необязательную переменную `PAGES_BASE_PATH`, например `/` либо `/Mathlab-iPhone/`. Локально можно собрать с тем же путём:

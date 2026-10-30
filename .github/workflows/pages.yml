@@ -39,13 +39,13 @@ jobs:
         env:
           BASE_PATH: ${{ vars.PAGES_BASE_PATH }}
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && vars.PAGES_REPOSITORY != '' && github.repository == vars.PAGES_REPOSITORY
+        if: github.ref == 'refs/heads/main' && github.repository == 'psselectronicstj-byte/calculator'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    if: github.ref == 'refs/heads/main' && vars.PAGES_REPOSITORY != '' && github.repository == vars.PAGES_REPOSITORY
+    if: github.ref == 'refs/heads/main' && github.repository == 'psselectronicstj-byte/calculator'
     needs: build
     runs-on: ubuntu-latest
     permissions:
