@@ -16,7 +16,7 @@ type Evaluated = {
 };
 
 class CalculationError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly code: "invalid-input" | "domain-error" = "domain-error") {
     super(message);
     this.name = "CalculationError";
   }
@@ -53,6 +53,7 @@ function calculate(
   node: MathNode,
   angleMode: AngleMode,
   steps: CalculationStep[],
+  variables: ReadonlyMap<string, number>,
 ): Evaluated {
   if (!isNodeLike(node)) {
     throw new CalculationError("Не удалось вычислить выражение.");
@@ -70,11 +71,15 @@ function calculate(
     if (name === "e") {
       return { value: Math.E, exact: false };
     }
-    throw new CalculationError(`Переменная ${name} не задана.`);
+    const value = variables.get(name);
+    if (value !== undefined) {
+      return { value: requireFinite(value), exact: false };
+    }
+    throw new CalculationError(`Переменная ${name} не задана.`, "invalid-input");
   }
 
   if (node.type === "ParenthesisNode" && isMathNode(node.content)) {
-    return calculate(node.content, angleMode, steps);
+    return calculate(node.content, angleMode, steps, variables);
   }
 
   if (node.type === "OperatorNode" && typeof node.op === "string" && Array.isArray(node.args)) {
@@ -83,7 +88,7 @@ function calculate(
     if (!isMathNode(first)) {
       throw new CalculationError("Некорректный операнд.");
     }
-    const left = calculate(first, angleMode, steps);
+    const left = calculate(first, angleMode, steps, variables);
     let result: number;
     let isExact = false;
 
@@ -97,7 +102,7 @@ function calculate(
       if (!isMathNode(second)) {
         throw new CalculationError("Некорректный операнд.");
       }
-      const right = calculate(second, angleMode, steps);
+      const right = calculate(second, angleMode, steps, variables);
       switch (node.op) {
         case "+":
           result = left.value + right.value;
@@ -143,7 +148,7 @@ function calculate(
     if (!isMathNode(argumentNode)) {
       throw new CalculationError("Некорректный аргумент функции.");
     }
-    const argument = calculate(argumentNode, angleMode, steps);
+    const argument = calculate(argumentNode, angleMode, steps, variables);
     const radians = angleMode === "degrees" ? argument.value * Math.PI / 180 : argument.value;
     let result: number;
 
@@ -219,15 +224,38 @@ export function evaluateScientific(
     return parsed;
   }
 
+  return evaluateParsedNode(parsed.value.node, angleMode, new Map());
+}
+
+export function evaluateScientificAt(
+  input: string,
+  variable: string,
+  value: number,
+): MathOutcome<number> {
+  if (!/^[a-z]$/.test(variable) || variable === "e" || !Number.isFinite(value)) {
+    return failure("invalid-input", "Укажите одну переменную и конечное числовое значение.");
+  }
+  const parsed = parseExpression(input, { allowVariables: true });
+  if (!parsed.ok) {
+    return parsed;
+  }
+  return evaluateParsedNode(parsed.value.node, "radians", new Map([[variable, value]]));
+}
+
+function evaluateParsedNode(
+  node: MathNode,
+  angleMode: AngleMode,
+  variables: ReadonlyMap<string, number>,
+): MathOutcome<number> {
   const steps: CalculationStep[] = [];
   try {
-    const result = calculate(parsed.value.node, angleMode, steps);
+    const result = calculate(node, angleMode, steps, variables);
     return result.exact
       ? exact(result.value, steps)
       : approximate(result.value, steps);
   } catch (error) {
     if (error instanceof CalculationError) {
-      return failure("domain-error", error.message);
+      return failure(error.code, error.message);
     }
     throw error;
   }

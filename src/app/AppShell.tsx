@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { FeatureKind, NavigationTarget } from "../domain/feature";
 import { CalculatorView } from "../features/calculator/CalculatorView";
+import { AlgebraView } from "../features/algebra/AlgebraView";
+import { EquationView } from "../features/equations/EquationView";
 import { HistoryView } from "../features/history/HistoryView";
 import { historyStore } from "../storage/history-store";
 import { featureLabels, navigationItems } from "./feature-registry";
@@ -38,8 +40,10 @@ export function AppShell() {
       </nav>
       <div className="app-content">
         {active === "calculator" && <CalculatorView initialInput={restoredInput} store={historyStore} />}
+        {active === "algebra" && <AlgebraView initialInput={restoredInput} store={historyStore} />}
+        {active === "equations" && <EquationView initialInput={restoredInput} store={historyStore} />}
         {active === "history" && <HistoryView store={historyStore} onRestore={restore} />}
-        {active !== "calculator" && active !== "history" && (
+        {active !== "calculator" && active !== "algebra" && active !== "equations" && active !== "history" && (
           <section className="feature-placeholder">
             <div className="feature-heading">
               <h2>{featureLabels[active]}</h2>
