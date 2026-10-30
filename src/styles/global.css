@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
@@ -67,6 +71,21 @@ textarea {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.55;
+}
+
+.app-status,
+.app-loading {
+  padding: 10px 12px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 8px;
+  background: var(--surface-panel);
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.app-update {
+  margin-top: 10px;
 }
 
 .app-nav {

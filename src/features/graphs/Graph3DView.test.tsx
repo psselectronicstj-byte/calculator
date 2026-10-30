@@ -75,10 +75,10 @@ describe("Graph3DView", () => {
     render(<AppShell />);
 
     fireEvent.click(screen.getByRole("button", { name: "3D-график" }));
-    fireEvent.click(screen.getByRole("button", { name: "Построить поверхности" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Построить поверхности" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/WebGL/i);
     fireEvent.click(screen.getByRole("button", { name: "Калькулятор" }));
 
-    expect(screen.getByRole("heading", { name: "Калькулятор", level: 2 })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Калькулятор", level: 2 })).toBeVisible();
   });
 });
