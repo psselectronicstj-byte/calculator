@@ -118,7 +118,7 @@ export function EquationView({ initialInput = "", store = historyStore }: Equati
     const result = solveRootsInInterval(input, variable, from, to);
     setIntervalOutcome(result);
     if (result.ok) {
-      await save(`${input} [${min}, ${max}]`, result.value.map(formatNumericResult).join("; "), result.status);
+      await save(input, result.value.map(formatNumericResult).join("; "), result.status);
     }
   };
 

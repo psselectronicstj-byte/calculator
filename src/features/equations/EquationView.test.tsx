@@ -48,4 +48,15 @@ describe("EquationView", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/интервал/i);
   });
+
+  it("keeps the restorable equation as the history input for interval search", async () => {
+    const store = makeStore();
+    render(<EquationView initialInput="x^2-2=0" store={store} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Найти корни" }));
+
+    expect(await store.list()).toMatchObject([
+      { feature: "equations", input: "x^2-2=0", status: "approximate" },
+    ]);
+  });
 });
