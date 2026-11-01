@@ -153,9 +153,9 @@ public sealed class SettingsStore
 - Produces `LeadDynamic.Core` and `LeadDynamic.App` projects, with App referencing Core and tests referencing Core.
 - App targets `net10.0-windows` with WPF enabled; Core and tests target `net10.0`.
 
-- [ ] **Step 1: Create the solution and projects** using `dotnet new sln --format sln`, `dotnet new classlib`, `dotnet new wpf`, and `dotnet new xunit`; add projects and references.
-- [ ] **Step 2: Run the initial test/build check** with `dotnet test windows-light-control\LeadDynamic.sln`; expected: test project discovered and all baseline tests pass.
-- [ ] **Step 3: Commit the isolated scaffold** with message `feat: scaffold Lead Dynamic Windows app`.
+- [x] **Step 1: Create the solution and projects** using `dotnet new sln --format sln`, `dotnet new classlib`, `dotnet new wpf`, and `dotnet new xunit`; add projects and references.
+- [x] **Step 2: Run the initial test/build check** with `dotnet test windows-light-control\LeadDynamic.sln`; expected: test project discovered and all baseline tests pass.
+- [x] **Step 3: Commit the isolated scaffold** with message `feat: scaffold Lead Dynamic Windows app`.
 
 ### Task 2: Implement schedule validation and evaluation
 
@@ -167,12 +167,12 @@ public sealed class SettingsStore
 - Consumes the project/test scaffold from Task 1.
 - Produces `ScheduleEvaluator.ValidateAndSort`, `EvaluateAt`, and `GetNextPoint` as defined in Interfaces.
 
-- [ ] **Step 1: Write failing tests** named `ValidateAndSort_RejectsOutOfRangeValues`, `ValidateAndSort_RequiresTwoPoints`, `ValidateAndSort_RejectsDuplicateTimes`, `ValidateAndSort_SortsByTime`, `EvaluateAt_UsesNewIntervalAtExactBoundary`, `EvaluateAt_InterpolatesOnIntervalWithTruncation`, `EvaluateAt_UsesNextTargetWhenOff`, and `EvaluateAt_InterpolatesAcrossMidnight`; assert the exact state/value at each boundary.
-- [ ] **Step 2: Run `dotnet test windows-light-control\LeadDynamic.sln --filter FullyQualifiedName~ScheduleEvaluatorTests`**; expected: tests fail because evaluator methods are not implemented.
-- [ ] **Step 3: Implement typed schedule models and validation**; reject out-of-range values, fewer than two points, and duplicate times with explicit argument errors.
-- [ ] **Step 4: Implement daily evaluation**; use the interval beginning at the latest point not later than the current time, wrapping last-to-first across midnight; linearly interpolate ON intervals and use following-point values for OFF intervals.
-- [ ] **Step 5: Rerun the focused test command**; expected: all schedule evaluator tests pass.
-- [ ] **Step 6: Commit schedule domain and tests** with message `feat: add daily light schedule evaluator`.
+- [x] **Step 1: Write failing tests** named `ValidateAndSort_RejectsOutOfRangeValues`, `ValidateAndSort_RequiresTwoPoints`, `ValidateAndSort_RejectsDuplicateTimes`, `ValidateAndSort_SortsByTime`, `EvaluateAt_UsesNewIntervalAtExactBoundary`, `EvaluateAt_InterpolatesOnIntervalWithTruncation`, `EvaluateAt_UsesNextTargetWhenOff`, and `EvaluateAt_InterpolatesAcrossMidnight`; assert the exact state/value at each boundary.
+- [x] **Step 2: Run `dotnet test windows-light-control\LeadDynamic.sln --filter FullyQualifiedName~ScheduleEvaluatorTests`**; expected: tests fail because evaluator methods are not implemented.
+- [x] **Step 3: Implement typed schedule models and validation**; reject out-of-range values, fewer than two points, and duplicate times with explicit argument errors.
+- [x] **Step 4: Implement daily evaluation**; use the interval beginning at the latest point not later than the current time, wrapping last-to-first across midnight; linearly interpolate ON intervals and use following-point values for OFF intervals.
+- [x] **Step 5: Rerun the focused test command**; expected: all schedule evaluator tests pass.
+- [x] **Step 6: Commit schedule domain and tests** with message `feat: add daily light schedule evaluator`.
 
 ### Task 3: Implement source-compatible protocol and TCP transport
 
@@ -185,15 +185,15 @@ public sealed class SettingsStore
 - Consumes the Core library from Task 1.
 - Produces `LightCommandEncoder.Encode`, `ICommandTransport.TestConnectionAsync`/`SendAsync`, and `PdcCommandClient.TestConnectionAsync`/`SendCommandAsync` exactly as defined above.
 
-- [ ] **Step 1: Write failing encoder tests** named `Encode_TurnOnMatchesSourceFrame`, `Encode_TurnOffMatchesSourceFrame`, `Encode_BrightnessMatchesSourceFrame`, `Encode_WarmthMatchesSourceFrame`, `Encode_UsesLastThreeIdentifierCharacters`, `Encode_ChecksumIsLowByteOfFrameFields`, `Encode_RejectsInvalidIdentifier`, and `Encode_RejectsInvalidValue`; assert the exact 12-byte arrays.
-- [ ] **Step 2: Run the encoder test filter**; expected: tests fail because the encoder is not implemented.
-- [ ] **Step 3: Implement the command enum and encoder** with the exact source byte codes, 12-byte layout, 500 ms pacing owned by the runner (not the encoder), and explicit validation before frame creation.
-- [ ] **Step 4: Rerun the encoder filter**; expected: every expected byte and checksum matches exactly.
-- [ ] **Step 5: Write loopback transport tests** using a local `TcpListener` for connectivity and one complete 12-byte payload; verify timeout, refused-connection, and cancellation errors surface to the caller.
-- [ ] **Step 6: Implement `TcpCommandClient.TestConnectionAsync` and `SendAsync`** with TCP connect/write timeouts, cancellation, one connection per frame, and no success-shaped fallback.
-- [ ] **Step 7: Implement `PdcCommandClient`** to validate endpoint/identifier, perform a read-only TCP connectivity check, and send only explicit user-requested encoded frames.
-- [ ] **Step 8: Run `dotnet test windows-light-control\LeadDynamic.sln --filter "FullyQualifiedName~Protocol|FullyQualifiedName~TcpCommandClientTests"`**; expected: protocol and loopback tests pass without accessing `10.10.100.254`.
-- [ ] **Step 9: Commit protocol and transport** with message `feat: add PDC TCP command transport`.
+- [x] **Step 1: Write failing encoder tests** named `Encode_TurnOnMatchesSourceFrame`, `Encode_TurnOffMatchesSourceFrame`, `Encode_BrightnessMatchesSourceFrame`, `Encode_WarmthMatchesSourceFrame`, `Encode_UsesLastThreeIdentifierCharacters`, `Encode_ChecksumIsLowByteOfFrameFields`, `Encode_RejectsInvalidIdentifier`, and `Encode_RejectsInvalidValue`; assert the exact 12-byte arrays.
+- [x] **Step 2: Run the encoder test filter**; expected: tests fail because the encoder is not implemented.
+- [x] **Step 3: Implement the command enum and encoder** with the exact source byte codes, 12-byte layout, 500 ms pacing owned by the runner (not the encoder), and explicit validation before frame creation.
+- [x] **Step 4: Rerun the encoder filter**; expected: every expected byte and checksum matches exactly.
+- [x] **Step 5: Write loopback transport tests** using a local `TcpListener` for connectivity and one complete 12-byte payload; verify timeout, refused-connection, and cancellation errors surface to the caller.
+- [x] **Step 6: Implement `TcpCommandClient.TestConnectionAsync` and `SendAsync`** with TCP connect/write timeouts, cancellation, one connection per frame, and no success-shaped fallback.
+- [x] **Step 7: Implement `PdcCommandClient`** to validate endpoint/identifier, perform a read-only TCP connectivity check, and send only explicit user-requested encoded frames.
+- [x] **Step 8: Run `dotnet test windows-light-control\LeadDynamic.sln --filter "FullyQualifiedName~Protocol|FullyQualifiedName~TcpCommandClientTests"`**; expected: protocol and loopback tests pass without accessing `10.10.100.254`.
+- [x] **Step 9: Commit protocol and transport** with message `feat: add PDC TCP command transport`.
 
 ### Task 4: Add local settings and safe schedule runner
 
@@ -207,13 +207,13 @@ public sealed class SettingsStore
 - Produces `ILightDeviceClient` to make the existing PDC facade injectable into the runner and verification service.
 - Produces settings storage under `%LocalAppData%\LeadDynamicLightControl\settings.json` and the `LightScheduleRunner.RunAsync` interface above.
 
-- [ ] **Step 1: Write failing store tests** named `Load_MissingFileReturnsSafeDefaults`, `SaveAndLoad_RoundTripsSettingsAndVerification`, and `Load_CorruptJsonReturnsExplicitError`; assert default endpoint `10.10.100.254:8899` and that corrupt settings do not enable automation.
-- [ ] **Step 2: Write failing runner tests** named `RunAsync_RejectsUnverifiedEndpoint`, `RunAsync_UsesAtMost64StepsPerInterval`, `RunAsync_SpacesFramesBy500Milliseconds`, `RunAsync_DoesNotOverlapWrites`, `RunAsync_RecalculatesAfterDelayedWrite`, `RunAsync_StopsOnCancellation`, and `RunAsync_PropagatesWriteFailure`; assert that no fake transport call occurs when verification is absent or for a different endpoint/device ID.
-- [ ] **Step 3: Run the focused persistence and runner test filters**; expected: failures expose the missing services.
-- [ ] **Step 4: Implement `SettingsStore`** using `System.Text.Json`, create its directory on save, preserve explicit parse/load errors, and isolate tests to temporary directories.
-- [ ] **Step 5: Implement runner verification, serialization, and cancellation**; accept a complete `LightControlSettings`, require its verified endpoint and device ID to match the active settings before any write, set each interval's poll cadence to `max(1 second, interval duration / 64)`, apply changed power/brightness/warmth using `ILightDeviceClient`, wait at least 500 ms between frames, stop on a write failure, and never replay stale samples.
-- [ ] **Step 6: Rerun all Core tests** with `dotnet test windows-light-control\LeadDynamic.sln`; expected: schedule, protocol, transport, persistence, and runner suites pass.
-- [ ] **Step 7: Commit persistence and runner** with message `feat: add safe local schedule automation`.
+- [x] **Step 1: Write failing store tests** named `Load_MissingFileReturnsSafeDefaults`, `SaveAndLoad_RoundTripsSettingsAndVerification`, and `Load_CorruptJsonReturnsExplicitError`; assert default endpoint `10.10.100.254:8899` and that corrupt settings do not enable automation.
+- [x] **Step 2: Write failing runner tests** named `RunAsync_RejectsUnverifiedEndpoint`, `RunAsync_UsesAtMost64StepsPerInterval`, `RunAsync_SpacesFramesBy500Milliseconds`, `RunAsync_DoesNotOverlapWrites`, `RunAsync_RecalculatesAfterDelayedWrite`, `RunAsync_StopsOnCancellation`, and `RunAsync_PropagatesWriteFailure`; assert that no fake transport call occurs when verification is absent or for a different endpoint/device ID.
+- [x] **Step 3: Run the focused persistence and runner test filters**; expected: failures expose the missing services.
+- [x] **Step 4: Implement `SettingsStore`** using `System.Text.Json`, create its directory on save, preserve explicit parse/load errors, and isolate tests to temporary directories.
+- [x] **Step 5: Implement runner verification, serialization, and cancellation**; accept a complete `LightControlSettings`, require its verified endpoint and device ID to match the active settings before any write, set each interval's poll cadence to `max(1 second, interval duration / 64)`, apply changed power/brightness/warmth using `ILightDeviceClient`, wait at least 500 ms between frames, stop on a write failure, and never replay stale samples.
+- [x] **Step 6: Rerun all Core tests** with `dotnet test windows-light-control\LeadDynamic.sln`; expected: schedule, protocol, transport, persistence, and runner suites pass.
+- [x] **Step 7: Commit persistence and runner** with message `feat: add safe local schedule automation`.
 
 ### Task 5: Build the Russian schedule editor and explicit verification flow
 
@@ -226,16 +226,16 @@ public sealed class SettingsStore
 - Consumes the Core interfaces from Tasks 2–4.
 - Produces Russian-language connection controls, editable target-point table, visible schedule status, explicit test/write confirmation, and start/stop actions.
 
-- [ ] **Step 1: Write failing verification tests** named `TestConnectionAsync_DoesNotVerifyDevice`, `SendUserInitiatedTestCommandAsync_AwaitsPhysicalConfirmation`, `ConfirmPhysicalResponseAsync_RequiresMatchingPendingTest`, `ConfirmPhysicalResponseAsync_PersistsMatchingDevice`, and `IsVerified_RejectsChangedEndpointOrIdentifier`; assert that TCP reachability alone never unlocks automation and confirmation is saved asynchronously only for the pending endpoint/device.
-- [ ] **Step 2: Run `dotnet test windows-light-control\LeadDynamic.sln --filter "FullyQualifiedName~DeviceVerificationServiceTests"`**; expected: tests fail because the service does not exist.
-- [ ] **Step 3: Implement `DeviceVerificationService`** using `PdcCommandClient`; the user must explicitly click a test command (turn on) and separately confirm the physical response; persist the verified endpoint and identifier asynchronously in `LightControlSettings` so the Core runner can independently enforce the gate. Reject confirmation unless a matching user-initiated test command is pending.
-- [ ] **Step 4: Create the WPF app test project and write failing tests** named `MainViewModel_StartScheduleRequiresDeviceVerification`, `MainViewModel_ChangingIdentifierInvalidatesVerification`, and `SchedulePointViewModel_ShowsRussianRangeErrors`; expected assertions cover the locked start state and actionable field errors.
-- [ ] **Step 5: Implement `SchedulePointViewModel`** with minute-precision `HH:mm` display, exact validation, and Russian error text for time, power, brightness, and warmth.
-- [ ] **Step 6: Implement `MainViewModel`** for editable/sorted schedule rows, add/remove, endpoint and device ID editing, settings load/save, TCP test, explicit test command/confirmation, next point, visible errors, verification-gated schedule start, and cancellable stop.
-- [ ] **Step 7: Add WPF resources and layout** with the selected schedule-editor design, polished aquarium-inspired styling, Russian labels, clear connection/schedule status, and high-contrast accessible controls.
-- [ ] **Step 8: Manually run the Windows app without connecting to hardware**; verify Russian UI, table editing, range errors, settings persistence, start lock before verification, and visible failed TCP connection.
-- [ ] **Step 9: Run `dotnet test windows-light-control\LeadDynamic.sln` and `dotnet build windows-light-control\LeadDynamic.sln -c Release`**; expected: Core and App tests pass and WPF Release build succeeds.
-- [ ] **Step 10: Commit the app workflow and UI** with message `feat: add polished Windows schedule editor`.
+- [x] **Step 1: Write failing verification tests** named `TestConnectionAsync_DoesNotVerifyDevice`, `SendUserInitiatedTestCommandAsync_AwaitsPhysicalConfirmation`, `ConfirmPhysicalResponseAsync_RequiresMatchingPendingTest`, `ConfirmPhysicalResponseAsync_PersistsMatchingDevice`, and `IsVerified_RejectsChangedEndpointOrIdentifier`; assert that TCP reachability alone never unlocks automation and confirmation is saved asynchronously only for the pending endpoint/device.
+- [x] **Step 2: Run `dotnet test windows-light-control\LeadDynamic.sln --filter "FullyQualifiedName~DeviceVerificationServiceTests"`**; expected: tests fail because the service does not exist.
+- [x] **Step 3: Implement `DeviceVerificationService`** using `PdcCommandClient`; the user must explicitly click a test command (turn on) and separately confirm the physical response; persist the verified endpoint and identifier asynchronously in `LightControlSettings` so the Core runner can independently enforce the gate. Reject confirmation unless a matching user-initiated test command is pending.
+- [x] **Step 4: Create the WPF app test project and write failing tests** named `MainViewModel_StartScheduleRequiresDeviceVerification`, `MainViewModel_ChangingIdentifierInvalidatesVerification`, and `SchedulePointViewModel_ShowsRussianRangeErrors`; expected assertions cover the locked start state and actionable field errors.
+- [x] **Step 5: Implement `SchedulePointViewModel`** with minute-precision `HH:mm` display, exact validation, and Russian error text for time, power, brightness, and warmth.
+- [x] **Step 6: Implement `MainViewModel`** for editable/sorted schedule rows, add/remove, endpoint and device ID editing, settings load/save, TCP test, explicit test command/confirmation, next point, visible errors, verification-gated schedule start, and cancellable stop.
+- [x] **Step 7: Add WPF resources and layout** with the selected schedule-editor design, polished aquarium-inspired styling, Russian labels, clear connection/schedule status, and high-contrast accessible controls.
+- [ ] **Step 8: Complete manual UI interaction verification without connecting to hardware**; the executable was launched and window startup confirmed, while table editing, range validation, settings persistence, start gating, and TCP error states are covered by automated tests but were not manually clicked.
+- [x] **Step 9: Run `dotnet test windows-light-control\LeadDynamic.sln` and `dotnet build windows-light-control\LeadDynamic.sln -c Release`**; expected: Core and App tests pass and WPF Release build succeeds.
+- [x] **Step 10: Commit the app workflow and UI** with message `feat: add polished Windows schedule editor`.
 
 ### Task 6: Document safe operation and publish a self-contained Windows build
 

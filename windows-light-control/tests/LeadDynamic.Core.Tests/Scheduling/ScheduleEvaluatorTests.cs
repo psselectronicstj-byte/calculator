@@ -53,6 +53,19 @@ public class ScheduleEvaluatorTests
     }
 
     [Fact]
+    public void ValidateAndSort_RejectsInvalidPower()
+    {
+        var points = new[]
+        {
+            Point(6, 0, (LightPower)99, 10, 5),
+            Point(18, 0, LightPower.Off, 0, 0)
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => ScheduleEvaluator.ValidateAndSort(points));
+    }
+
+    [Fact]
     public void ValidateAndSort_SortsByTime()
     {
         var late = Point(18, 0, LightPower.Off, 0, 0);

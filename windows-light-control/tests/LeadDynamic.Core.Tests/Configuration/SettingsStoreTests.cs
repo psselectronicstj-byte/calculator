@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LeadDynamic.Core.Configuration;
 using LeadDynamic.Core.Scheduling;
 
@@ -71,6 +72,37 @@ public sealed class SettingsStoreTests
             Assert.Null(exception.SafeDefaults.VerifiedHost);
             Assert.Null(exception.SafeDefaults.VerifiedPort);
             Assert.Null(exception.SafeDefaults.VerifiedLightIdentifier);
+        });
+    }
+
+    [Fact]
+    public void Load_NullScheduleEntryReturnsExplicitError()
+    {
+        WithDirectory(directory =>
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(
+                Path.Combine(directory, "settings.json"),
+                """
+                {
+                  "Host": "192.168.1.25",
+                  "Port": 8899,
+                  "LightIdentifier": "A1B2C3D4E5F6",
+                  "Schedule": [
+                    null,
+                    { "Time": "18:00:00", "Power": 1, "Brightness": 0, "Warmth": 0 }
+                  ],
+                  "VerifiedHost": null,
+                  "VerifiedPort": null,
+                  "VerifiedLightIdentifier": null
+                }
+                """);
+
+            var exception = Assert.Throws<SettingsLoadException>(
+                () => new SettingsStore(directory).Load());
+
+            Assert.IsType<JsonException>(exception.InnerException);
+            Assert.Empty(exception.SafeDefaults.Schedule);
         });
     }
 

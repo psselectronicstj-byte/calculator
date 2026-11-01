@@ -68,7 +68,7 @@ public sealed class LightScheduleRunnerTests
         client = new RecordingLightDeviceClient(timeProvider, onSend: (command, value) =>
         {
             if (command == LightCommand.Brightness &&
-                value == 0 &&
+                value == 64 &&
                 client!.Commands[^1].At >= intervalEnd)
             {
                 cancellation.Cancel();
@@ -82,8 +82,8 @@ public sealed class LightScheduleRunnerTests
             Port,
             Identifier,
             [
-                new SchedulePoint(new TimeOnly(6, 0), LightPower.Off, 0, 0),
-                new SchedulePoint(new TimeOnly(7, 4), LightPower.Off, 64, 32)
+                new SchedulePoint(new TimeOnly(6, 0), LightPower.On, 0, 0),
+                new SchedulePoint(new TimeOnly(7, 4), LightPower.On, 64, 32)
             ],
             Host,
             Port,
@@ -92,18 +92,19 @@ public sealed class LightScheduleRunnerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => runner.RunAsync(settings, cancellation.Token));
 
-        var intervalSteps = timeProvider.ScheduledDelays
-            .Count(delay =>
-                delay.At >= intervalStart &&
-                delay.At < intervalEnd &&
-                delay.Duration == TimeSpan.FromMinutes(1));
+        var intervalSteps = client.Commands
+            .Count(command =>
+                command.Command == LightCommand.Brightness &&
+                command.Value is > 0 and <= 64 &&
+                command.At >= intervalStart &&
+                command.At <= intervalEnd);
 
         Assert.Equal(64, intervalSteps);
         Assert.Contains(
             client.Commands,
             command =>
                 command.Command == LightCommand.Brightness &&
-                command.Value == 0 &&
+                command.Value == 64 &&
                 command.At >= intervalEnd);
     }
 
@@ -256,9 +257,9 @@ public sealed class LightScheduleRunnerTests
 
         Assert.Equal(
             [
+                (LightCommand.TurnOff, (int?)null),
                 (LightCommand.Brightness, (int?)8),
-                (LightCommand.Warmth, (int?)4),
-                (LightCommand.TurnOff, (int?)null)
+                (LightCommand.Warmth, (int?)4)
             ],
             client.Commands.Select(command => (command.Command, command.Value)));
     }
@@ -280,6 +281,44 @@ public sealed class LightScheduleRunnerTests
             () => runner.RunAsync(Settings(), cancellation.Token));
 
         Assert.Single(client.Commands);
+    }
+
+    [Fact]
+    public async Task RunAsync_UsesSameSampleForAllFramesInPollCycle()
+    {
+        var timeProvider = new AdvancingTimeProvider();
+        using var cancellation = new CancellationTokenSource();
+        RecordingLightDeviceClient? client = null;
+        client = new RecordingLightDeviceClient(timeProvider, onSend: (command, _) =>
+        {
+            if (command == LightCommand.Warmth)
+            {
+                cancellation.Cancel();
+            }
+
+            return Task.CompletedTask;
+        });
+        var settings = Settings() with
+        {
+            Schedule =
+            [
+                new SchedulePoint(new TimeOnly(6, 0), LightPower.On, 63, 32),
+                new SchedulePoint(new TimeOnly(6, 1), LightPower.On, 0, 0)
+            ]
+        };
+        var runner = new LightScheduleRunner(client, timeProvider);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => runner.RunAsync(settings, cancellation.Token));
+
+        Assert.Equal(
+            [
+                (LightCommand.TurnOn, (int?)null),
+                (LightCommand.Brightness, 63),
+                (LightCommand.Brightness, 61),
+                (LightCommand.Warmth, 31)
+            ],
+            client.Commands.Select(command => (command.Command, command.Value)));
     }
 
     [Fact]

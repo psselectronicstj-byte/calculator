@@ -24,6 +24,12 @@ public static class ScheduleEvaluator
                 throw new ArgumentException("Schedule point times must have minute precision.", nameof(points));
             }
 
+            if (!Enum.IsDefined(point.Power))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(points), point.Power, "Schedule point power must be On or Off.");
+            }
+
             if (point.Brightness > MaximumBrightness)
             {
                 throw new ArgumentOutOfRangeException(

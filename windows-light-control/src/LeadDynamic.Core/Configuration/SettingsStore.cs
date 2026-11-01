@@ -37,9 +37,10 @@ public sealed class SettingsStore
             if (settings is null ||
                 settings.Host is null ||
                 settings.LightIdentifier is null ||
-                settings.Schedule is null)
+                settings.Schedule is null ||
+                settings.Schedule.Any(point => point is null))
             {
-                throw new JsonException("The settings document is missing required values.");
+                throw new JsonException("The settings document is missing required values or contains a null schedule point.");
             }
 
             return settings;
