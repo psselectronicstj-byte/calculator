@@ -44,10 +44,14 @@ public sealed class LightScheduleRunnerTests
     {
         var timeProvider = new AdvancingTimeProvider();
         using var cancellation = new CancellationTokenSource();
+        var intervalStart = new DateTimeOffset(2026, 11, 1, 6, 0, 0, TimeSpan.Zero);
+        var intervalEnd = intervalStart.AddMinutes(64);
         RecordingLightDeviceClient client = null!;
-        client = new RecordingLightDeviceClient(timeProvider, onSend: (_, _) =>
+        client = new RecordingLightDeviceClient(timeProvider, onSend: (command, value) =>
         {
-            if (client!.Commands.Count >= 4)
+            if (command == LightCommand.Brightness &&
+                value == 0 &&
+                client!.Commands[^1].At >= intervalEnd)
             {
                 cancellation.Cancel();
             }
@@ -55,11 +59,68 @@ public sealed class LightScheduleRunnerTests
             return Task.CompletedTask;
         });
         var runner = new LightScheduleRunner(client, timeProvider);
+        var settings = new LightControlSettings(
+            Host,
+            Port,
+            Identifier,
+            [
+                new SchedulePoint(new TimeOnly(6, 0), LightPower.Off, 0, 0),
+                new SchedulePoint(new TimeOnly(7, 4), LightPower.Off, 64, 32)
+            ],
+            Host,
+            Port,
+            Identifier);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => runner.RunAsync(Settings(), cancellation.Token));
+            () => runner.RunAsync(settings, cancellation.Token));
 
-        Assert.Contains(TimeSpan.FromSeconds(3.75), timeProvider.Delays);
+        var intervalSteps = timeProvider.ScheduledDelays
+            .Count(delay =>
+                delay.At >= intervalStart &&
+                delay.At < intervalEnd &&
+                delay.Duration == TimeSpan.FromMinutes(1));
+
+        Assert.Equal(64, intervalSteps);
+        Assert.Contains(
+            client.Commands,
+            command =>
+                command.Command == LightCommand.Brightness &&
+                command.Value == 0 &&
+                command.At >= intervalEnd);
+    }
+
+    [Fact]
+    public async Task RunAsync_PreservesFrameSpacingAfterCancellationAndRestart()
+    {
+        var timeProvider = new AdvancingTimeProvider { AdvanceOnDelay = false };
+        using var firstCancellation = new CancellationTokenSource();
+        using var secondCancellation = new CancellationTokenSource();
+        RecordingLightDeviceClient client = null!;
+        client = new RecordingLightDeviceClient(timeProvider, onSend: (_, _) =>
+        {
+            if (client.Commands.Count >= 2)
+            {
+                secondCancellation.Cancel();
+            }
+
+            return Task.CompletedTask;
+        });
+        var runner = new LightScheduleRunner(client, timeProvider);
+        timeProvider.OnDelayScheduled = _ => firstCancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => runner.RunAsync(Settings(), firstCancellation.Token));
+
+        Assert.Single(client.Commands);
+
+        timeProvider.AdvanceOnDelay = true;
+        timeProvider.OnDelayScheduled = null;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => runner.RunAsync(Settings(), secondCancellation.Token));
+
+        Assert.Equal(2, client.Commands.Count);
+        Assert.True(
+            client.Commands[1].At - client.Commands[0].At >= TimeSpan.FromMilliseconds(500));
     }
 
     [Fact]
@@ -305,27 +366,33 @@ public sealed class LightScheduleRunnerTests
 
     private sealed record RecordedCommand(LightCommand Command, int? Value, DateTimeOffset At);
 
+    private sealed record ScheduledDelay(DateTimeOffset At, TimeSpan Duration);
+
     private sealed class AdvancingTimeProvider : TimeProvider
     {
         private readonly object _sync = new();
         private DateTimeOffset _utcNow;
-        private readonly List<TimeSpan> _delays = [];
+        private readonly List<ScheduledDelay> _scheduledDelays = [];
 
         public AdvancingTimeProvider(DateTimeOffset? utcNow = null)
         {
             _utcNow = utcNow ?? new DateTimeOffset(2026, 11, 1, 6, 0, 0, TimeSpan.Zero);
         }
 
-        public IReadOnlyList<TimeSpan> Delays
+        public IReadOnlyList<ScheduledDelay> ScheduledDelays
         {
             get
             {
                 lock (_sync)
                 {
-                    return _delays.ToArray();
+                    return _scheduledDelays.ToArray();
                 }
             }
         }
+
+        public bool AdvanceOnDelay { get; set; } = true;
+
+        public Action<TimeSpan>? OnDelayScheduled { get; set; }
 
         public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
 
@@ -373,19 +440,26 @@ public sealed class LightScheduleRunnerTests
                 return;
             }
 
+            OnDelayScheduled?.Invoke(dueTime);
             lock (_sync)
             {
-                _delays.Add(dueTime);
-                _utcNow += dueTime;
+                _scheduledDelays.Add(new ScheduledDelay(_utcNow, dueTime));
+                if (AdvanceOnDelay)
+                {
+                    _utcNow += dueTime;
+                }
             }
 
-            ThreadPool.QueueUserWorkItem(
-                static state =>
-                {
-                    var scheduledTimer = (AdvancingTimer)state!;
-                    scheduledTimer.Fire();
-                },
-                timer);
+            if (AdvanceOnDelay)
+            {
+                ThreadPool.QueueUserWorkItem(
+                    static state =>
+                    {
+                        var scheduledTimer = (AdvancingTimer)state!;
+                        scheduledTimer.Fire();
+                    },
+                    timer);
+            }
         }
 
         private sealed class AdvancingTimer(

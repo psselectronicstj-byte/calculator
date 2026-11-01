@@ -12,6 +12,7 @@ public sealed class LightScheduleRunner
     private readonly ILightDeviceClient _client;
     private readonly TimeProvider _timeProvider;
     private readonly SemaphoreSlim _runGate = new(1, 1);
+    private long? _lastFrameTimestamp;
 
     public LightScheduleRunner(ILightDeviceClient client, TimeProvider? timeProvider = null)
     {
@@ -35,7 +36,6 @@ public sealed class LightScheduleRunner
             LightPower? appliedPower = null;
             byte? appliedBrightness = null;
             byte? appliedWarmth = null;
-            long? lastFrameTimestamp = null;
 
             while (true)
             {
@@ -56,7 +56,7 @@ public sealed class LightScheduleRunner
                     continue;
                 }
 
-                await WaitForFrameSpacingAsync(lastFrameTimestamp, cancellationToken)
+                await WaitForFrameSpacingAsync(_lastFrameTimestamp, cancellationToken)
                     .ConfigureAwait(false);
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -98,7 +98,7 @@ public sealed class LightScheduleRunner
                         throw new InvalidOperationException("Unsupported light command.");
                 }
 
-                lastFrameTimestamp = _timeProvider.GetTimestamp();
+                _lastFrameTimestamp = _timeProvider.GetTimestamp();
             }
         }
         finally
