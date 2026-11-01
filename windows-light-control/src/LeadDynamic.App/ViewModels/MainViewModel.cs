@@ -26,6 +26,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly LightScheduleRunner _runner;
     private LightControlSettings _settings;
     private string _host;
+    private string? _settingsRecoveryWarning;
     private int _port;
     private string _lightIdentifier;
     private string _connectionStatus = "Настройки загружены. Подключение не проверялось.";
@@ -48,9 +49,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         catch (SettingsLoadException exception)
         {
             _settings = exception.SafeDefaults;
-            ErrorMessage = $"Файл настроек повреждён или недоступен. Используются безопасные значения. {exception.Message}";
+            _settingsRecoveryWarning =
+                $"Файл настроек повреждён или недоступен. Используются безопасные значения. {exception.Message}";
+            ErrorMessage = _settingsRecoveryWarning;
         }
 
+        _settings = NormalizeHosts(_settings);
         _host = _settings.Host;
         _port = _settings.Port;
         _lightIdentifier = _settings.LightIdentifier;
@@ -83,7 +87,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         get => _host;
         set
         {
-            if (SetProperty(ref _host, value ?? string.Empty))
+            if (SetProperty(ref _host, value?.Trim() ?? string.Empty))
             {
                 RefreshScheduleState();
             }
@@ -181,7 +185,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool CanTestConnection => !IsBusy && HasValidEndpoint;
     public bool CanSendTestCommand => !IsBusy && HasValidDevice;
     public bool HasValidEndpoint => !string.IsNullOrWhiteSpace(Host) && Port is >= 1 and <= 65535;
-    public bool HasValidDevice => HasValidEndpoint && IsValidIdentifier(LightIdentifier);
+    public bool HasValidDevice => HasValidEndpoint && LightCommandEncoder.IsValidIdentifier(LightIdentifier);
 
     public void AddPoint()
     {
@@ -212,7 +216,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         if (!found)
         {
-            ErrorMessage = "Все минуты суток уже заняты точками расписания.";
+            SetError("Все минуты суток уже заняты точками расписания.");
             return;
         }
 
@@ -257,10 +261,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task SaveAsync(CancellationToken cancellationToken = default)
     {
-        ErrorMessage = null;
+        ClearTransientError();
         if (!TryBuildValidSchedule(out var schedule))
         {
-            ErrorMessage = "Сначала исправьте расписание: нужны минимум две точки, уникальное время и корректные значения.";
+            SetError("Сначала исправьте расписание: нужны минимум две точки, уникальное время и корректные значения.");
             return;
         }
 
@@ -271,11 +275,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             await _settingsStore.SaveAsync(settings, cancellationToken);
             _settings = settings;
             _verification.UpdateSettings(settings);
+            _settingsRecoveryWarning = null;
+            ErrorMessage = null;
             ConnectionStatus = "Настройки сохранены на этом устройстве.";
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            ErrorMessage = $"Не удалось сохранить настройки: {exception.Message}";
+            SetError($"Не удалось сохранить настройки: {exception.Message}");
         }
         finally
         {
@@ -286,10 +292,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task TestConnectionAsync(CancellationToken cancellationToken = default)
     {
-        ErrorMessage = null;
+        ClearTransientError();
         if (!CanTestConnection)
         {
-            ErrorMessage = "Проверьте адрес и порт (1–65535).";
+            SetError("Проверьте адрес и порт (1–65535).");
             return;
         }
 
@@ -304,7 +310,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             ConnectionStatus = "TCP-подключение не удалось.";
-            ErrorMessage = $"Ошибка подключения: {exception.Message}";
+            SetError($"Ошибка подключения: {exception.Message}");
         }
         finally
         {
@@ -316,10 +322,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public async Task SendUserInitiatedTestCommandAsync(
         CancellationToken cancellationToken = default)
     {
-        ErrorMessage = null;
+        ClearTransientError();
         if (!CanSendTestCommand)
         {
-            ErrorMessage = "Укажите адрес, порт и корректный 12-значный идентификатор светильника.";
+            SetError("Укажите адрес, порт и корректный 12-значный идентификатор светильника.");
             return;
         }
 
@@ -335,7 +341,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             ConnectionStatus = "Тестовая команда не отправлена.";
-            ErrorMessage = $"Ошибка команды: {exception.Message}";
+            SetError($"Ошибка команды: {exception.Message}");
         }
         finally
         {
@@ -346,7 +352,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task ConfirmPhysicalResponseAsync(CancellationToken cancellationToken = default)
     {
-        ErrorMessage = null;
+        ClearTransientError();
         IsBusy = true;
         try
         {
@@ -358,7 +364,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            ErrorMessage = $"Не удалось сохранить подтверждение: {exception.Message}";
+            SetError($"Не удалось сохранить подтверждение: {exception.Message}");
         }
         finally
         {
@@ -375,10 +381,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public void StartSchedule()
     {
-        ErrorMessage = null;
+        ClearTransientError();
         if (!CanStartSchedule || !TryBuildValidSchedule(out var schedule))
         {
-            ErrorMessage = "Запуск закрыт: подтвердите светильник и исправьте расписание.";
+            SetError("Запуск закрыт: подтвердите светильник и исправьте расписание.");
             return;
         }
 
@@ -420,7 +426,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception exception)
         {
-            ErrorMessage = $"Ошибка расписания: {exception.Message}";
+            SetError($"Ошибка расписания: {exception.Message}");
             ConnectionStatus = "Расписание остановлено из-за ошибки.";
         }
         finally
@@ -514,7 +520,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private LightControlSettings BuildSettings(IReadOnlyList<SchedulePoint>? schedule = null) =>
         _settings with
         {
-            Host = Host.Trim(),
+            Host = Host,
             Port = Port,
             LightIdentifier = LightIdentifier.Trim(),
             Schedule = schedule ?? _settings.Schedule
@@ -531,8 +537,19 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _verification.UpdateSettings(_settings);
     }
 
-    private static bool IsValidIdentifier(string identifier) =>
-        identifier.Length == 12 && identifier.All(Uri.IsHexDigit);
+    private static LightControlSettings NormalizeHosts(LightControlSettings settings) =>
+        settings with
+        {
+            Host = settings.Host.Trim(),
+            VerifiedHost = settings.VerifiedHost?.Trim()
+        };
+
+    private void ClearTransientError() => ErrorMessage = _settingsRecoveryWarning;
+
+    private void SetError(string message) =>
+        ErrorMessage = _settingsRecoveryWarning is null
+            ? message
+            : $"{_settingsRecoveryWarning} {message}";
 
     private bool SetProperty<T>(
         ref T field,

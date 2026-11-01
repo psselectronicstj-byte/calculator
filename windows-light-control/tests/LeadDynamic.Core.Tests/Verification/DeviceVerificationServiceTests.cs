@@ -107,6 +107,29 @@ public sealed class DeviceVerificationServiceTests
         });
     }
 
+    [Fact]
+    public async Task IsVerified_RejectsMalformedIdentifier()
+    {
+        await WithStoreAsync(async store =>
+        {
+            var service = new DeviceVerificationService(
+                new FakeLightDeviceClient(),
+                store,
+                Settings() with
+                {
+                    VerifiedHost = Host,
+                    VerifiedPort = Port,
+                    VerifiedLightIdentifier = "invalid-id"
+                });
+
+            Assert.False(service.IsVerified(Host, Port, "invalid-id"));
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => service.SendUserInitiatedTestCommandAsync(
+                    Host, Port, "invalid-id", CancellationToken.None));
+        });
+    }
+
     private const string Host = "192.168.1.26";
     private const int Port = 8899;
     private const string Identifier = "A1B2C3D4E5F6";

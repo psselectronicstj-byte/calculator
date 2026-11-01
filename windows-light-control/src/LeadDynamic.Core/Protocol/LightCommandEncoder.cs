@@ -25,10 +25,13 @@ public static class LightCommandEncoder
         return frame;
     }
 
+    public static bool IsValidIdentifier(string? lightIdentifier) =>
+        lightIdentifier is { Length: 12 } && lightIdentifier.All(Uri.IsHexDigit);
+
     private static void ValidateIdentifier(string lightIdentifier)
     {
         ArgumentNullException.ThrowIfNull(lightIdentifier);
-        if (lightIdentifier.Length != 12 || !lightIdentifier.All(Uri.IsHexDigit))
+        if (!IsValidIdentifier(lightIdentifier))
         {
             throw new ArgumentException(
                 "The light identifier must contain exactly 12 hexadecimal characters.",

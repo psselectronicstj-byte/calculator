@@ -40,6 +40,24 @@ public sealed class LightScheduleRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_RejectsMalformedIdentifierBeforeWriting()
+    {
+        var timeProvider = new AdvancingTimeProvider();
+        var client = new RecordingLightDeviceClient(timeProvider);
+        var runner = new LightScheduleRunner(client, timeProvider);
+        var settings = Settings() with
+        {
+            LightIdentifier = "invalid-id",
+            VerifiedLightIdentifier = "invalid-id"
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => runner.RunAsync(settings, CancellationToken.None));
+
+        Assert.Empty(client.Commands);
+    }
+
+    [Fact]
     public async Task RunAsync_UsesAtMost64StepsPerInterval()
     {
         var timeProvider = new AdvancingTimeProvider();

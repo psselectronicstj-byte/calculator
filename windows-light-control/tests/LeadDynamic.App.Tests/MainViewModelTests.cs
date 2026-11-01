@@ -43,6 +43,56 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task MainViewModel_NormalizesHostThroughTestConfirmationAndStartGate()
+    {
+        await WithStoreAsync(async store =>
+        {
+            var client = new FakeLightDeviceClient();
+            var viewModel = new MainViewModel(store, client);
+            viewModel.AddPoint();
+            viewModel.AddPoint();
+            viewModel.Host = $"  {Host}  ";
+            viewModel.LightIdentifier = Identifier;
+
+            await viewModel.TestConnectionAsync();
+            Assert.Equal((Host, Port), Assert.Single(client.TestedEndpoints));
+
+            await viewModel.SendUserInitiatedTestCommandAsync();
+            await viewModel.ConfirmPhysicalResponseAsync();
+
+            var saved = store.Load();
+            Assert.Equal(Host, viewModel.Host);
+            Assert.Equal(Host, saved.Host);
+            Assert.Equal(Host, saved.VerifiedHost);
+            Assert.True(viewModel.CanStartSchedule);
+        });
+    }
+
+    [Fact]
+    public async Task MainViewModel_MalformedPersistedIdentifierCannotEnableStart()
+    {
+        await WithStoreAsync(async store =>
+        {
+            const string invalidIdentifier = "invalid-id";
+            await store.SaveAsync(
+                new LightControlSettings(
+                    Host,
+                    Port,
+                    invalidIdentifier,
+                    ValidSchedule(),
+                    Host,
+                    Port,
+                    invalidIdentifier),
+                CancellationToken.None);
+
+            var viewModel = new MainViewModel(store, new FakeLightDeviceClient());
+
+            Assert.False(viewModel.CanStartSchedule);
+            Assert.False(viewModel.IsDeviceVerified);
+        });
+    }
+
+    [Fact]
     public void SchedulePointViewModel_ShowsRussianRangeErrors()
     {
         var point = new SchedulePointViewModel(
@@ -149,6 +199,43 @@ public sealed class MainViewModelTests
         }
     }
 
+    [Fact]
+    public async Task MainViewModel_SuccessfulTcpTestPreservesCorruptSettingsWarningUntilSave()
+    {
+        var directory = Path.Combine(
+            Environment.CurrentDirectory, "main-view-model-test-data", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(
+                Path.Combine(directory, "settings.json"), "{ broken json");
+            var client = new FakeLightDeviceClient();
+            var viewModel = new MainViewModel(new SettingsStore(directory), client);
+            var warning = viewModel.ErrorMessage;
+
+            await viewModel.TestConnectionAsync();
+
+            Assert.Equal(1, client.ConnectionTests);
+            Assert.Contains("повреждён", viewModel.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(warning, viewModel.ErrorMessage);
+
+            viewModel.AddPoint();
+            viewModel.AddPoint();
+            await viewModel.SaveAsync();
+
+            Assert.Null(viewModel.ErrorMessage);
+            Assert.False(viewModel.HasError);
+            Assert.NotEmpty(new SettingsStore(directory).Load().Schedule);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
     private const string Host = "192.168.1.26";
     private const int Port = 8899;
     private const string Identifier = "A1B2C3D4E5F6";
@@ -196,14 +283,14 @@ public sealed class MainViewModelTests
     private sealed class FakeLightDeviceClient : ILightDeviceClient
     {
         public int ConnectionTests { get; private set; }
+        public List<(string Host, int Port)> TestedEndpoints { get; } = [];
         public List<(string Host, int Port, string Identifier, LightCommand Command, int? Value)> Commands { get; } = [];
 
-        public Task TestConnectionAsync(string host, int port, CancellationToken cancellationToken) =>
-            CountConnectionTest();
-
-        private Task CountConnectionTest()
+        public Task TestConnectionAsync(string host, int port, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ConnectionTests++;
+            TestedEndpoints.Add((host, port));
             return Task.CompletedTask;
         }
 

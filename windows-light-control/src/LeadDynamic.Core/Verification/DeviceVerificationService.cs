@@ -37,7 +37,7 @@ public sealed class DeviceVerificationService
     public bool IsVerified(string host, int port, string lightIdentifier) =>
         !string.IsNullOrWhiteSpace(host) &&
         port is >= 1 and <= 65535 &&
-        !string.IsNullOrWhiteSpace(lightIdentifier) &&
+        LightCommandEncoder.IsValidIdentifier(lightIdentifier) &&
         string.Equals(_settings.VerifiedHost, host, StringComparison.OrdinalIgnoreCase) &&
         _settings.VerifiedPort == port &&
         string.Equals(
@@ -57,6 +57,13 @@ public sealed class DeviceVerificationService
         string lightIdentifier,
         CancellationToken cancellationToken)
     {
+        if (!LightCommandEncoder.IsValidIdentifier(lightIdentifier))
+        {
+            throw new ArgumentException(
+                "The light identifier must contain exactly 12 hexadecimal characters.",
+                nameof(lightIdentifier));
+        }
+
         await _confirmationGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {

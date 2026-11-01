@@ -208,7 +208,7 @@ public sealed class LightScheduleRunner
     {
         if (string.IsNullOrWhiteSpace(settings.Host) ||
             settings.Port is < 1 or > 65535 ||
-            string.IsNullOrWhiteSpace(settings.LightIdentifier) ||
+            !LightCommandEncoder.IsValidIdentifier(settings.LightIdentifier) ||
             string.IsNullOrWhiteSpace(settings.VerifiedHost) ||
             settings.VerifiedPort is null ||
             string.IsNullOrWhiteSpace(settings.VerifiedLightIdentifier) ||
