@@ -1,0 +1,303 @@
+<Window x:Class="LeadDynamic.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Аквариумный свет · Расписание"
+        Width="1120" Height="900" MinWidth="900" MinHeight="720"
+        Background="{StaticResource CanvasBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#071923" Offset="0" />
+                <GradientStop Color="#0A222D" Offset="0.55" />
+                <GradientStop Color="#0C2931" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid Margin="34,27,34,26">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource EyebrowText}" Text="LEAD DYNAMIC · AQUARIUM" />
+                        <TextBlock Text="Световой ритм"
+                                   FontSize="31" FontWeight="SemiBold" Margin="0,5,0,3" />
+                        <TextBlock Text="Спокойный ежедневный цикл для вашего аквариума"
+                                   Foreground="{StaticResource MutedBrush}" FontSize="14" />
+                    </StackPanel>
+                    <Border Grid.Column="1" VerticalAlignment="Center"
+                            Background="#112E39" BorderBrush="{StaticResource LineBrush}"
+                            BorderThickness="1" CornerRadius="20" Padding="14,9">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Ellipse.Style>
+                                    <Style TargetType="{x:Type Ellipse}">
+                                        <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDeviceVerified}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource AccentBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding VerificationStatus}" FontSize="12" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Grid.Row="1" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                        CornerRadius="14" Padding="22" Margin="0,0,0,18">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,17">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource EyebrowText}" Text="01 · ПОДКЛЮЧЕНИЕ" />
+                                <TextBlock Text="Контроллер светильника" FontSize="19"
+                                           FontWeight="SemiBold" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                       Foreground="{StaticResource MutedBrush}" FontSize="12"
+                                       Text="Все настройки хранятся локально" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2.1*" />
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="2.1*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Адрес контроллера" />
+                                <TextBox Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="4,0,12,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="TCP-порт" />
+                                <TextBox Text="{Binding Port, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="Идентификатор светильника · 12 символов" />
+                                <TextBox Text="{Binding LightIdentifier, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,17,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ConnectionStatus}" FontSize="13"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="TCP-тест проверяет только доступность порта, а не физический отклик."
+                                           Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Проверить TCP"
+                                    IsEnabled="{Binding CanTestConnection}"
+                                    Click="TestConnection_Click" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2" Background="#122E35"
+                        BorderBrush="#41656A" BorderThickness="1"
+                        CornerRadius="14" Padding="20" Margin="0,0,0,18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource EyebrowText}" Text="ПРОВЕРКА ОТКЛИКА · ТРЕБУЕТСЯ ДЕЙСТВИЕ" />
+                            <TextBlock Text="Сначала команда, затем ваше подтверждение"
+                                       FontSize="16" FontWeight="SemiBold" Margin="0,5,0,4" />
+                            <TextBlock Text="Только эта отдельная кнопка отправляет команду «Включить». TCP-запись не получает подтверждение от устройства; после команды мы спросим, увидели ли вы включение лампы."
+                                       Foreground="{StaticResource MutedBrush}" FontSize="12"
+                                       MaxWidth="690" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Отправить тест «Включить»"
+                                Style="{StaticResource PrimaryButton}"
+                                IsEnabled="{Binding CanSendTestCommand}"
+                                VerticalAlignment="Center" Margin="18,0,0,0"
+                                Click="SendTestCommand_Click" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="3" Background="{StaticResource PanelBrush}"
+                        BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                        CornerRadius="14" Padding="22" Margin="0,0,0,18">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource EyebrowText}" Text="02 · СУТОЧНЫЕ ТОЧКИ" />
+                                <TextBlock Text="Расписание освещения" FontSize="19"
+                                           FontWeight="SemiBold" Margin="0,4,0,0" />
+                                <TextBlock Text="Время задаёт начало интервала. Яркость 0–64 · теплота 0–32 · переходы рассчитываются автоматически."
+                                           Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="+ Добавить точку"
+                                    VerticalAlignment="Center" Click="AddPoint_Click" />
+                        </Grid>
+
+                        <DataGrid ItemsSource="{Binding SchedulePoints}"
+                                  CellEditEnding="ScheduleGrid_CellEditEnding"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserResizeRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="{StaticResource LineBrush}"
+                                  Background="#0B202A"
+                                  Foreground="{StaticResource TextBrush}"
+                                  BorderBrush="{StaticResource LineBrush}"
+                                  BorderThickness="1"
+                                  RowBackground="#0B202A"
+                                  AlternatingRowBackground="#102832"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  RowDetailsVisibilityMode="Visible"
+                                  MinHeight="150"
+                                  MaxHeight="310"
+                                  RowHeaderWidth="0"
+                                  FontSize="13">
+                            <DataGrid.ColumnHeaderStyle>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="Background" Value="#173641" />
+                                    <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+                                    <Setter Property="FontSize" Value="11" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="Padding" Value="12,11" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+                                    <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                </Style>
+                            </DataGrid.ColumnHeaderStyle>
+                            <DataGrid.CellStyle>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="Padding" Value="7,5" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#234C55" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.CellStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ВРЕМЯ · ЧЧ:ММ" Width="1.2*"
+                                                    Binding="{Binding TimeText, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
+                                <DataGridTemplateColumn Header="СОСТОЯНИЕ" Width="1.4*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.PowerOptions, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                      DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                      SelectedValue="{Binding Power, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="ЯРКОСТЬ · 0–64" Width="1.2*"
+                                                    Binding="{Binding Brightness, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
+                                <DataGridTextColumn Header="ТЕПЛОТА · 0–32" Width="1.2*"
+                                                    Binding="{Binding Warmth, UpdateSourceTrigger=PropertyChanged, ValidatesOnNotifyDataErrors=True}" />
+                                <DataGridTemplateColumn Header="" Width="Auto">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Удалить" Padding="10,6"
+                                                    Click="RemovePoint_Click" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                            <DataGrid.RowDetailsTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,0,12,8">
+                                        <Border.Style>
+                                            <Style TargetType="{x:Type Border}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding ValidationSummary}"
+                                                   Foreground="{StaticResource ErrorBrush}"
+                                                   FontSize="11" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGrid.RowDetailsTemplate>
+                        </DataGrid>
+
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{Binding ScheduleStatus}" FontWeight="SemiBold" FontSize="13" />
+                                <TextBlock Text="{Binding NextPointText}" Foreground="{StaticResource MutedBrush}"
+                                           FontSize="12" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Сохранить настройки"
+                                    Click="Save_Click" VerticalAlignment="Center" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="4" Background="#0D242D"
+                        BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                        CornerRadius="14" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                            <TextBlock Text="Автоматизация" FontWeight="SemiBold" FontSize="14" />
+                            <TextBlock Text="Запуск доступен только для проверенного устройства и корректного расписания."
+                                       Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Остановить"
+                                Style="{StaticResource DangerButton}"
+                                IsEnabled="{Binding CanStopSchedule}"
+                                Click="Stop_Click" Margin="0,0,10,0" />
+                        <Button Grid.Column="2" Content="Запустить расписание"
+                                Style="{StaticResource PrimaryButton}"
+                                IsEnabled="{Binding CanStartSchedule}"
+                                Click="Start_Click" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="5" Background="#4A292E" BorderBrush="#875157"
+                        BorderThickness="1" CornerRadius="9" Padding="12,9"
+                        Margin="0,12,0,0"
+                        Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibility}}">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#FFE7E2"
+                               FontSize="12" />
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Window>
