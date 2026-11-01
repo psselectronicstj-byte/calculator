@@ -2,7 +2,7 @@ using LeadDynamic.Core.Protocol;
 
 namespace LeadDynamic.Core.Networking;
 
-public sealed class PdcCommandClient
+public sealed class PdcCommandClient : ILightDeviceClient
 {
     private readonly ICommandTransport _transport;
 
